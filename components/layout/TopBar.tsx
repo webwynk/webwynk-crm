@@ -5,16 +5,15 @@ import { useSession, signOut } from 'next-auth/react';
 import { useUIStore } from '@/store/uiStore';
 import {
   Menu,
-  Search,
   Bell,
   User,
   LogOut,
   Settings,
   ChevronDown,
+  Search,
 } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,15 +74,6 @@ export default function TopBar() {
     initialData: 0,
   });
 
-  const getInitials = (name?: string | null) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase();
-  };
 
   const handleLogout = () => {
     signOut({ callbackUrl: '/' });
@@ -111,23 +101,34 @@ export default function TopBar() {
         </div>
       </div>
 
-      {/* Center: Search Bar (Hidden on Mobile) */}
-      <div className="hidden lg:flex items-center max-w-md w-full mx-8 relative">
-        <Search className="w-4 h-4 text-zinc-400 absolute left-3 pointer-events-none" />
-        <Input
-          type="text"
-          placeholder="Search projects, employees, updates..."
-          className="pl-9 bg-zinc-50/50 dark:bg-zinc-900/30 border-border focus-visible:ring-primary/20 w-full text-sm rounded-lg"
-        />
-      </div>
+      {/* Center: Command Palette Hint (Hidden on Mobile) */}
+      <button
+        className="hidden lg:flex items-center gap-2 max-w-xs w-full mx-8 px-3 h-9 rounded-lg border border-border bg-zinc-50/60 dark:bg-zinc-900/30 text-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors cursor-pointer select-none"
+        onClick={() => {
+          const event = new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true });
+          document.dispatchEvent(event);
+        }}
+        aria-label="Open command palette"
+      >
+        <Search className="w-3.5 h-3.5 shrink-0" />
+        <span className="flex-1 text-left text-sm">Search or jump to...</span>
+        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-[10px] font-mono text-zinc-400 font-medium">
+          ⌘K
+        </kbd>
+      </button>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2 md:gap-3">
-        {/* Mobile Search Toggle or Indicator */}
+        {/* Mobile cmd+K hint */}
         <Button
           variant="ghost"
           size="icon"
           className="lg:hidden text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900/40"
+          aria-label="Open search"
+          onClick={() => {
+            const event = new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true });
+            document.dispatchEvent(event);
+          }}
         >
           <Search className="w-[18px] h-[18px]" />
         </Button>
@@ -145,7 +146,7 @@ export default function TopBar() {
         >
           <Bell className="w-[18px] h-[18px]" />
           {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-4.5 h-4.5 bg-rose-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border-2 border-card animate-pulse">
+            <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] bg-rose-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border-2 border-card px-0.5">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -167,14 +168,14 @@ export default function TopBar() {
               <Avatar className="w-8 h-8 border border-zinc-200 dark:border-zinc-800">
                 <AvatarImage src={user.avatar || undefined} className="object-cover" />
                 <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-semibold text-xs">
-                  {getInitials(user.name)}
+                  {getInitials(user.name || '')}
                 </AvatarFallback>
               </Avatar>
               <div className="text-left hidden sm:block max-w-[120px]">
                 <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-50 truncate leading-none">
                   {user.name}
                 </p>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5 truncate block">
+                <span className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5 truncate block">
                   {user.designation || 'Team Member'}
                 </span>
               </div>

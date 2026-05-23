@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import PageWrapper from '@/components/shared/PageWrapper';
 import PageHeader from '@/components/shared/PageHeader';
+import EmptyState from '@/components/shared/EmptyState';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { formatDate, formatTime, getInitials, getCurrentYearMonth, cn } from '@/lib/utils';
+import { formatDate, formatTime, getInitials, getCurrentYearMonth, cn, getAvatarColor } from '@/lib/utils';
 import { exportAttendanceCSV } from '@/lib/export';
 
 interface AttendanceRecord {
@@ -210,9 +211,12 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
               <tbody className="divide-y divide-border">
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-16 text-zinc-400">
-                      <Clock className="w-8 h-8 mx-auto mb-2 text-zinc-200 dark:text-zinc-700" />
-                      <p className="text-sm">No attendance records found</p>
+                    <td colSpan={7} className="p-0">
+                      <EmptyState
+                        icon={Clock}
+                        title="No attendance records"
+                        description="There are no attendance records matching your search/filter criteria."
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -224,9 +228,8 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                             <AvatarImage src={record.user.avatar || undefined} className="object-cover" />
                             <AvatarFallback className={cn(
                               'text-xs font-semibold',
-                              isHR
-                                ? 'bg-sky-100 dark:bg-sky-900/40 text-sky-700'
-                                : 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700'
+                              getAvatarColor(record.userId).bg,
+                              getAvatarColor(record.userId).text
                             )}>
                               {getInitials(record.user.name)}
                             </AvatarFallback>

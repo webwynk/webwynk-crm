@@ -184,29 +184,40 @@ export default function OnboardingModal() {
           </div>
 
           {/* Progress Indicator */}
-          <div className="flex items-center gap-2 mb-8 w-full max-w-[280px]">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex-1 flex items-center">
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border transition-all duration-300 ${
-                    s < step
-                      ? `${roleColors.bg} border-transparent text-white`
-                      : s === step
-                      ? `${roleColors.border} ${roleColors.text} bg-white dark:bg-zinc-900 font-bold border-2`
-                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-600 bg-transparent'
-                  }`}
-                >
-                  {s < step ? <Check className="w-3.5 h-3.5" /> : s}
-                </div>
-                {s < 3 && (
+          <div className="flex flex-col items-center mb-8 w-full max-w-[340px]">
+            <div className="flex items-center w-full justify-between relative px-4">
+              {/* Connecting progress lines */}
+              <div className="absolute top-3 left-10 right-10 h-0.5 bg-zinc-100 dark:bg-zinc-800/60 -z-10" />
+              <div
+                className={`absolute top-3 left-10 h-0.5 transition-all duration-300 -z-10 ${roleColors.bg}`}
+                style={{ width: step === 1 ? '0%' : step === 2 ? '41%' : '82%' }}
+              />
+
+              {[1, 2, 3].map((s) => (
+                <div key={s} className="flex flex-col items-center gap-1.5 relative z-10 w-20">
                   <div
-                    className={`flex-1 h-0.5 mx-2 rounded-full transition-all duration-300 ${
-                      s < step ? roleColors.bg : 'bg-zinc-100 dark:bg-zinc-800'
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border transition-all duration-300 ${
+                      s < step
+                        ? `${roleColors.bg} border-transparent text-white`
+                        : s === step
+                        ? `${roleColors.border} ${roleColors.text} bg-white dark:bg-zinc-900 font-bold border-2`
+                        : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-650 bg-white dark:bg-zinc-900'
                     }`}
-                  />
-                )}
-              </div>
-            ))}
+                  >
+                    {s < step ? <Check className="w-3.5 h-3.5" /> : s}
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider select-none transition-colors duration-300 ${
+                      s <= step
+                        ? 'text-zinc-700 dark:text-zinc-300'
+                        : 'text-zinc-400 dark:text-zinc-600'
+                    }`}
+                  >
+                    {s === 1 ? 'Password' : s === 2 ? 'Avatar' : 'Profile'}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Steps Content container */}

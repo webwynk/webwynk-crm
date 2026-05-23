@@ -2,19 +2,45 @@
 
 import { motion } from 'framer-motion';
 
-const pageVariants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' as const } },
+const parentVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.06,
+      delayChildren: 0.02,
+    },
+  },
 };
 
-export default function PageWrapper({ children }: { children: React.ReactNode }) {
+const childVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: 'easeOut' as const,
+    },
+  },
+};
+
+export default function PageWrapper({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <motion.div
       initial="hidden"
       animate="visible"
-      variants={pageVariants}
-      className="w-full h-full"
+      variants={parentVariants}
+      className={className || "w-full h-full"}
     >
+      {children}
+    </motion.div>
+  );
+}
+
+export function PageItem({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <motion.div variants={childVariants} className={className}>
       {children}
     </motion.div>
   );

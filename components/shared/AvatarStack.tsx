@@ -1,8 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getInitials } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { cn, getInitials, getAvatarColor } from '@/lib/utils';
 
 interface AvatarUser {
   id: string;
@@ -30,21 +29,24 @@ export default function AvatarStack({
 
   return (
     <div className={cn('flex -space-x-2', className)}>
-      {visible.map((user) => (
-        <Avatar
-          key={user.id}
-          className={cn(
-            sizeClasses,
-            'border-2 border-card ring-0 shrink-0'
-          )}
-          title={user.name}
-        >
-          <AvatarImage src={user.avatar || undefined} className="object-cover" />
-          <AvatarFallback className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-semibold">
-            {getInitials(user.name)}
-          </AvatarFallback>
-        </Avatar>
-      ))}
+      {visible.map((user) => {
+        const color = getAvatarColor(user.id);
+        return (
+          <Avatar
+            key={user.id}
+            className={cn(
+              sizeClasses,
+              'border-2 border-card ring-0 shrink-0'
+            )}
+            title={user.name}
+          >
+            <AvatarImage src={user.avatar || undefined} className="object-cover" />
+            <AvatarFallback className={cn("font-semibold", color.bg, color.text)}>
+              {getInitials(user.name)}
+            </AvatarFallback>
+          </Avatar>
+        );
+      })}
       {overflow > 0 && (
         <div
           className={cn(

@@ -26,31 +26,37 @@ const hrNavItems: NavItemSpec[] = [
     label: 'Dashboard',
     href: '/hr/dashboard',
     icon: LayoutDashboard,
+    group: 'Overview',
   },
   {
     label: 'Employees',
     href: '/hr/employees',
     icon: Users,
+    group: 'People',
   },
   {
     label: 'Attendance',
     href: '/hr/attendance',
     icon: Clock,
+    group: 'People',
   },
   {
     label: 'Salary',
     href: '/hr/salary',
     icon: Banknote,
+    group: 'People',
   },
   {
     label: 'Chat',
     href: '/hr/chat',
     icon: MessageSquare,
+    group: 'Communication',
   },
   {
     label: 'Notifications',
     href: '/hr/notifications',
     icon: Bell,
+    group: 'Communication',
   },
 ];
 

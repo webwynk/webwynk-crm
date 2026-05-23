@@ -12,7 +12,8 @@ import {
   Banknote,
 
 } from 'lucide-react';
-import PageWrapper from '@/components/shared/PageWrapper';
+import PageWrapper, { PageItem } from '@/components/shared/PageWrapper';
+import EmptyState from '@/components/shared/EmptyState';
 import StatsCard from '@/components/shared/StatsCard';
 import StatusBadge from '@/components/shared/StatusBadge';
 import AvatarStack from '@/components/shared/AvatarStack';
@@ -97,79 +98,91 @@ export default function AdminDashboardPage() {
     <PageWrapper>
       <div className="space-y-6">
         {/* Welcome Banner */}
-        <div className="flex flex-col gap-1">
+        <PageItem className="flex flex-col gap-1">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-sans">
             Welcome back, {session?.user?.name?.split(' ')[0] || 'Admin'} 👋
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Here is what is happening with WebWynk today.
           </p>
-        </div>
+        </PageItem>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatsCard
-            icon={FolderKanban}
-            value={statsLoading ? '...' : stats?.totalProjects ?? 0}
-            label="Total Projects"
-            trend={{
-              value: `${stats?.activeProjects ?? 0} active`,
-              isPositive: true,
-              label: 'currently running',
-            }}
-            iconColor="text-indigo-500"
-            iconBg="bg-indigo-50 dark:bg-indigo-500/10"
-            loading={statsLoading}
-          />
-          <StatsCard
-            icon={Users}
-            value={statsLoading ? '...' : stats?.totalEmployees ?? 0}
-            label="Total Employees"
-            trend={{
-              value: 'HR + Staff',
-              isPositive: true,
-              label: 'active team members',
-            }}
-            iconColor="text-sky-500"
-            iconBg="bg-sky-50 dark:bg-sky-500/10"
-            loading={statsLoading}
-          />
-          <StatsCard
-            icon={Clock}
-            value={
-              statsLoading
-                ? '...'
-                : `${stats?.todayAttendance ?? 0} / ${stats?.totalEmployees ?? 0}`
-            }
-            label="Today's Attendance"
-            trend={{
-              value: `${stats?.attendanceRate ?? 0}%`,
-              isPositive: (stats?.attendanceRate ?? 0) >= 70,
-              label: 'presence rate today',
-            }}
-            iconColor="text-emerald-500"
-            iconBg="bg-emerald-50 dark:bg-emerald-500/10"
-            loading={statsLoading}
-          />
-          <StatsCard
-            icon={Banknote}
-            value={statsLoading ? '...' : stats?.pendingSalaries ?? 0}
-            label="Pending Salaries"
-            trend={{
-              value: stats?.pendingSalaries === 0 ? 'All paid' : 'Needs action',
-              isPositive: stats?.pendingSalaries === 0,
-              label: 'salary payments',
-            }}
-            iconColor="text-violet-500"
-            iconBg="bg-violet-50 dark:bg-violet-500/10"
-            loading={statsLoading}
-          />
+          <PageItem>
+            <StatsCard
+              icon={FolderKanban}
+              value={statsLoading ? '...' : stats?.totalProjects ?? 0}
+              label="Total Projects"
+              trend={{
+                value: `${stats?.activeProjects ?? 0} active`,
+                isPositive: true,
+                label: 'currently running',
+              }}
+              iconColor="text-indigo-500"
+              iconBg="bg-indigo-50 dark:bg-indigo-500/10"
+              accentColor="#6366f1"
+              loading={statsLoading}
+            />
+          </PageItem>
+          <PageItem>
+            <StatsCard
+              icon={Users}
+              value={statsLoading ? '...' : stats?.totalEmployees ?? 0}
+              label="Total Employees"
+              trend={{
+                value: 'HR + Staff',
+                isPositive: true,
+                label: 'active team members',
+              }}
+              iconColor="text-sky-500"
+              iconBg="bg-sky-50 dark:bg-sky-500/10"
+              accentColor="#0ea5e9"
+              loading={statsLoading}
+            />
+          </PageItem>
+          <PageItem>
+            <StatsCard
+              icon={Clock}
+              value={
+                statsLoading
+                  ? '...'
+                  : `${stats?.todayAttendance ?? 0} / ${stats?.totalEmployees ?? 0}`
+              }
+              label="Today's Attendance"
+              trend={{
+                value: `${stats?.attendanceRate ?? 0}%`,
+                isPositive: (stats?.attendanceRate ?? 0) >= 70,
+                label: 'presence rate today',
+              }}
+              iconColor="text-emerald-500"
+              iconBg="bg-emerald-50 dark:bg-emerald-500/10"
+              accentColor="#10b981"
+              loading={statsLoading}
+            />
+          </PageItem>
+          <PageItem>
+            <StatsCard
+              icon={Banknote}
+              value={statsLoading ? '...' : stats?.pendingSalaries ?? 0}
+              label="Pending Salaries"
+              trend={{
+                value: stats?.pendingSalaries === 0 ? 'All paid' : 'Needs action',
+                isPositive: stats?.pendingSalaries === 0,
+                label: 'salary payments',
+              }}
+              iconColor="text-violet-500"
+              iconBg="bg-violet-50 dark:bg-violet-500/10"
+              accentColor="#8b5cf6"
+              loading={statsLoading}
+            />
+          </PageItem>
         </div>
 
         {/* Main Content: Recent Projects + Activity Feed */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Projects */}
-          <div className="lg:col-span-2 border border-border bg-card rounded-xl shadow-card overflow-hidden">
+          <PageItem className="lg:col-span-2 border border-border bg-card rounded-xl shadow-card overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <FolderKanban className="w-4 h-4 text-indigo-500" />
@@ -198,10 +211,14 @@ export default function AdminDashboardPage() {
                   </div>
                 ))
               ) : stats?.recentProjects?.length === 0 ? (
-                <div className="px-5 py-10 text-center">
-                  <FolderKanban className="w-8 h-8 text-zinc-200 dark:text-zinc-700 mx-auto mb-2" />
-                  <p className="text-xs text-zinc-400">No projects yet. Create one to get started.</p>
-                </div>
+                <EmptyState
+                  icon={FolderKanban}
+                  title="No projects yet"
+                  description="Create one to get started."
+                  iconColor="text-indigo-550 dark:text-indigo-400"
+                  iconBg="bg-indigo-50/50 dark:bg-indigo-950/20"
+                  compact
+                />
               ) : (
                 stats?.recentProjects?.map((project) => {
                   const typeConfig = PROJECT_TYPE_CONFIG[project.type as keyof typeof PROJECT_TYPE_CONFIG];
@@ -239,10 +256,10 @@ export default function AdminDashboardPage() {
                 })
               )}
             </div>
-          </div>
+          </PageItem>
 
           {/* Recent Activity */}
-          <div className="border border-border bg-card rounded-xl shadow-card overflow-hidden">
+          <PageItem className="border border-border bg-card rounded-xl shadow-card overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-violet-500" />
@@ -298,7 +315,7 @@ export default function AdminDashboardPage() {
                 })
               )}
             </div>
-          </div>
+          </PageItem>
         </div>
       </div>
     </PageWrapper>

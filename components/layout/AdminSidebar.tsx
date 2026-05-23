@@ -28,41 +28,49 @@ const adminNavItems: NavItemSpec[] = [
     label: 'Dashboard',
     href: '/admin/dashboard',
     icon: LayoutDashboard,
+    group: 'Overview',
   },
   {
     label: 'Projects',
     href: '/admin/projects',
     icon: FolderKanban,
+    group: 'Management',
   },
   {
     label: 'Employees',
     href: '/admin/employees',
     icon: Users,
+    group: 'Management',
   },
   {
     label: 'Attendance',
     href: '/admin/attendance',
     icon: Clock,
+    group: 'Management',
   },
   {
     label: 'Salary',
     href: '/admin/salary',
     icon: Banknote,
-  },
-  {
-    label: 'Activity Log',
-    href: '/admin/activity',
-    icon: Activity,
+    group: 'Management',
   },
   {
     label: 'Chat',
     href: '/admin/chat',
     icon: MessageSquare,
+    group: 'Communication',
   },
   {
     label: 'Notifications',
     href: '/admin/notifications',
     icon: Bell,
+    group: 'Communication',
+  },
+  {
+    label: 'Activity Log',
+    href: '/admin/activity',
+    icon: Activity,
+    group: 'Audit',
   },
 ];
 

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
 import Image from 'next/image';
 import {
   ArrowLeft,
@@ -24,6 +23,7 @@ import {
   Layers,
 } from 'lucide-react';
 import PageWrapper from '@/components/shared/PageWrapper';
+import Breadcrumb from '@/components/shared/Breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -236,16 +236,13 @@ export default function EmployeeProjectDetailPage() {
 
   return (
     <PageWrapper>
-      {/* Back Link */}
-      <div className="mb-4">
-        <Link
-          href="/employee/projects"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Projects
-        </Link>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: 'Employee', href: '/employee/dashboard' },
+          { label: 'My Projects', href: '/employee/projects' },
+          { label: project.title },
+        ]}
+      />
 
       {/* Header Panel */}
       <div className="premium-card relative bg-card border border-border rounded-2xl overflow-hidden shadow-card p-6 mb-6">

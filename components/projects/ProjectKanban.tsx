@@ -151,13 +151,13 @@ function KanbanCard({
           <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-2 leading-snug">
             {project.title}
           </h4>
-          <p className="text-[10px] text-zinc-400 mt-0.5 truncate">{project.clientName}</p>
+          <p className="text-xs text-zinc-400 mt-0.5 truncate">{project.clientName}</p>
         </div>
       </div>
 
       {/* Type badge */}
       <span className={cn(
-        'inline-flex items-center text-[9px] font-semibold px-1.5 py-0.5 rounded-full border mb-2',
+        'inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded-full border mb-2',
         typeConfig.bg,
         typeConfig.color
       )}>
@@ -167,10 +167,20 @@ function KanbanCard({
       {/* Progress */}
       <div className="space-y-0.5 mb-2">
         <div className="flex justify-between">
-          <span className="text-[9px] text-zinc-400">Progress</span>
-          <span className="text-[9px] font-semibold text-zinc-500">{project.progress}%</span>
+          <span className="text-xs text-zinc-400">Progress</span>
+          <span className="text-xs font-semibold text-zinc-500">{project.progress}%</span>
         </div>
-        <Progress value={project.progress} className="h-1" />
+        <Progress
+          value={project.progress}
+          className="h-1"
+          indicatorClassName={
+            project.progress < 30
+              ? 'bg-rose-500'
+              : project.progress < 70
+              ? 'bg-amber-500'
+              : 'bg-emerald-500'
+          }
+        />
       </div>
 
       {/* Footer */}

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import PageWrapper from '@/components/shared/PageWrapper';
 import PageHeader from '@/components/shared/PageHeader';
+import EmptyState from '@/components/shared/EmptyState';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { formatINR, formatDate, getInitials, getCurrentYearMonth, cn } from '@/lib/utils';
+import { formatINR, formatDate, getInitials, getCurrentYearMonth, cn, getAvatarColor } from '@/lib/utils';
 import { exportSalaryCSV, exportSalaryPDF } from '@/lib/export';
 
 interface SalaryRecord {
@@ -188,7 +189,7 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
         ].map((card) => (
           <div key={card.label} className="bg-card border border-border rounded-xl p-4 shadow-card text-center">
             <p className={`text-xl font-bold ${card.color}`}>{card.value}</p>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-wider mt-1">{card.label}</p>
+            <p className="text-xs text-zinc-400 uppercase tracking-wider mt-1">{card.label}</p>
           </div>
         ))}
       </div>
@@ -252,7 +253,7 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="space-y-1">
-              <Label className="text-[10px] uppercase text-zinc-500 font-semibold">Employee</Label>
+              <Label className="text-xs uppercase text-zinc-500 font-semibold">Employee</Label>
               <Select value={newRecord.userId} onValueChange={(v) => setNewRecord((p) => ({ ...p, userId: v ?? '' }))}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Select" />
@@ -265,15 +266,15 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-[10px] uppercase text-zinc-500 font-semibold">Month</Label>
+              <Label className="text-xs uppercase text-zinc-500 font-semibold">Month</Label>
               <Input type="month" value={newRecord.month} onChange={(e) => setNewRecord((p) => ({ ...p, month: e.target.value }))} className="h-8 text-xs" />
             </div>
             <div className="space-y-1">
-              <Label className="text-[10px] uppercase text-zinc-500 font-semibold">Amount (₹)</Label>
+              <Label className="text-xs uppercase text-zinc-500 font-semibold">Amount (₹)</Label>
               <Input type="number" placeholder="e.g. 35000" value={newRecord.amount} onChange={(e) => setNewRecord((p) => ({ ...p, amount: e.target.value }))} className="h-8 text-xs" />
             </div>
             <div className="space-y-1">
-              <Label className="text-[10px] uppercase text-zinc-500 font-semibold">Note</Label>
+              <Label className="text-xs uppercase text-zinc-500 font-semibold">Note</Label>
               <Input placeholder="Optional note..." value={newRecord.note} onChange={(e) => setNewRecord((p) => ({ ...p, note: e.target.value }))} className="h-8 text-xs" />
             </div>
           </div>
@@ -317,9 +318,12 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
               <tbody className="divide-y divide-border">
                 {salaries.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-16 text-zinc-400">
-                      <Banknote className="w-8 h-8 mx-auto mb-2 text-zinc-200 dark:text-zinc-700" />
-                      <p className="text-sm">No salary records for this period</p>
+                    <td colSpan={6} className="p-0">
+                      <EmptyState
+                        icon={Banknote}
+                        title="No salary records"
+                        description="There are no salary records matching the selected filters for this period."
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -331,16 +335,15 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
                             <AvatarImage src={record.user.avatar || undefined} className="object-cover" />
                             <AvatarFallback className={cn(
                               'text-xs font-semibold',
-                              isHR
-                                ? 'bg-sky-100 dark:bg-sky-900/40 text-sky-700'
-                                : 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700'
+                              getAvatarColor(record.userId).bg,
+                              getAvatarColor(record.userId).text
                             )}>
                               {getInitials(record.user.name)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium text-zinc-900 dark:text-zinc-50 text-xs">{record.user.name}</p>
-                            <p className="text-[10px] text-zinc-400">{record.user.designation || 'Team Member'}</p>
+                            <p className="text-xs text-zinc-400">{record.user.designation || 'Team Member'}</p>
                           </div>
                         </div>
                       </td>
@@ -355,7 +358,7 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
                           {record.status !== 'PAID' && (
                             <button
                               onClick={() => handleMarkPaid(record.id, record.user.name)}
-                              className="flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+                              className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
                             >
                               <CheckCircle className="w-3 h-3" />
                               Mark Paid
@@ -363,7 +366,7 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
                           )}
                           <button
                             onClick={() => handleDelete(record.id)}
-                            className="flex items-center gap-1 text-[10px] font-medium text-rose-500 hover:underline"
+                            className="flex items-center gap-1 text-xs font-medium text-rose-500 hover:underline"
                           >
                             <Trash2 className="w-3 h-3" />
                             Delete

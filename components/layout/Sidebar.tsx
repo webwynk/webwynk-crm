@@ -12,11 +12,13 @@ import {
 import RoleBadge from '../shared/RoleBadge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
+import { getInitials } from '@/lib/utils';
 
 export interface NavItemSpec {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  group?: string;
 }
 
 interface SidebarProps {
@@ -58,15 +60,6 @@ export default function Sidebar({ user, items, accentColor }: SidebarProps) {
     signOut({ callbackUrl: '/' });
   };
 
-  const getInitials = (name?: string | null) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase();
-  };
 
   return (
     <div
@@ -79,6 +72,7 @@ export default function Sidebar({ user, items, accentColor }: SidebarProps) {
         variant="ghost"
         size="icon"
         onClick={toggleSidebar}
+        aria-label="Toggle sidebar"
         className="absolute -right-3 top-6 w-6 h-6 rounded-full border border-border bg-card shadow-sm z-50 hover:bg-muted"
       >
         {sidebarCollapsed ? (
@@ -110,33 +104,49 @@ export default function Sidebar({ user, items, accentColor }: SidebarProps) {
         </div>
 
         {/* Navigation Items */}
-        <nav className="p-3 space-y-1.5">
-          {items.map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            const Icon = item.icon;
+        <nav className="p-3 space-y-1">
+          {(() => {
+            let lastGroup = '';
+            return items.map((item) => {
+              const isActive = pathname.startsWith(item.href);
+              const Icon = item.icon;
+              const showGroupHeader = item.group && item.group !== lastGroup;
+              if (item.group) {
+                lastGroup = item.group;
+              }
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${
-                  isActive
-                    ? `${accentStyles.textActive} ${accentStyles.bgActive} font-semibold sidebar-item-active ${accentStyles.borderLeft}`
-                    : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-450 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900/40'
-                } ${sidebarCollapsed ? 'justify-center px-2' : ''}`}
-              >
-                <Icon className={`w-[18px] h-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105 ${isActive ? '' : 'text-zinc-450 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-350'}`} />
-                {!sidebarCollapsed && <span>{item.label}</span>}
+              return (
+                <div key={item.href} className="space-y-1">
+                  {showGroupHeader && !sidebarCollapsed && (
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400/80 dark:text-zinc-500 px-3.5 pt-4 pb-1 select-none">
+                      {item.group}
+                    </p>
+                  )}
+                  {showGroupHeader && sidebarCollapsed && (
+                    <div className="h-px bg-border my-2 mx-2" />
+                  )}
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${
+                      isActive
+                        ? `${accentStyles.textActive} ${accentStyles.bgActive} font-semibold sidebar-item-active ${accentStyles.borderLeft}`
+                        : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-450 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900/40'
+                    } ${sidebarCollapsed ? 'justify-center px-2' : ''}`}
+                  >
+                    <Icon className={`w-[18px] h-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105 ${isActive ? '' : 'text-zinc-450 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-350'}`} />
+                    {!sidebarCollapsed && <span>{item.label}</span>}
 
-                {/* Collapsed Tooltip */}
-                {sidebarCollapsed && (
-                  <div className="absolute left-[75px] bg-zinc-950 text-white text-xs py-1.5 px-3 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap shadow-md z-[100] border border-zinc-800">
-                    {item.label}
-                  </div>
-                )}
-              </Link>
-            );
-          })}
+                    {/* Collapsed Tooltip */}
+                    {sidebarCollapsed && (
+                      <div className="absolute left-[75px] bg-zinc-950 text-white text-xs py-1.5 px-3 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap shadow-md z-[100] border border-zinc-800">
+                        {item.label}
+                      </div>
+                    )}
+                  </Link>
+                </div>
+              );
+            });
+          })()}
         </nav>
       </div>
 
@@ -148,7 +158,7 @@ export default function Sidebar({ user, items, accentColor }: SidebarProps) {
               <Avatar className="w-10 h-10 border border-zinc-200 dark:border-zinc-850">
                 <AvatarImage src={user.avatar || undefined} className="object-cover" />
                 <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-semibold text-sm">
-                  {getInitials(user.name)}
+                  {getInitials(user.name || '')}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
@@ -180,7 +190,7 @@ export default function Sidebar({ user, items, accentColor }: SidebarProps) {
             <Avatar className="w-9 h-9 border border-zinc-200 dark:border-zinc-800 group relative cursor-pointer">
               <AvatarImage src={user.avatar || undefined} className="object-cover" />
               <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-semibold text-xs">
-                {getInitials(user.name)}
+                {getInitials(user.name || '')}
               </AvatarFallback>
             </Avatar>
             

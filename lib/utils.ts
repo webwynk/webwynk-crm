@@ -57,11 +57,29 @@ export function formatINR(amount: number): string {
 
 // ─── Avatar helpers ───────────────────────────────────────
 export function getInitials(name: string): string {
+  if (!name) return 'U';
   return name
     .split(" ")
     .slice(0, 2)
     .map((n) => n[0]?.toUpperCase() ?? "")
     .join("");
+}
+
+export function getAvatarColor(id: string): { bg: string; text: string } {
+  const colors = [
+    { bg: 'bg-indigo-100 dark:bg-indigo-950/40', text: 'text-indigo-700 dark:text-indigo-400' },
+    { bg: 'bg-sky-100 dark:bg-sky-950/40', text: 'text-sky-700 dark:text-sky-400' },
+    { bg: 'bg-emerald-100 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-400' },
+    { bg: 'bg-rose-100 dark:bg-rose-950/40', text: 'text-rose-700 dark:text-rose-400' },
+    { bg: 'bg-amber-100 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-400' },
+    { bg: 'bg-violet-100 dark:bg-violet-950/40', text: 'text-violet-700 dark:text-violet-400' },
+  ];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
 }
 
 // ─── Project type styling ────────────────────────────────

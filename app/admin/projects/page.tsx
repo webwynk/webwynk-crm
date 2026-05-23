@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import PageWrapper from '@/components/shared/PageWrapper';
 import PageHeader from '@/components/shared/PageHeader';
+import EmptyState from '@/components/shared/EmptyState';
 import ProjectCard from '@/components/projects/ProjectCard';
 import ProjectCreateModal from '@/components/projects/ProjectCreateModal';
 import ProjectKanban from '@/components/projects/ProjectKanban';
@@ -162,7 +163,17 @@ export default function AdminProjectsPage() {
           <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
         </div>
       ) : projects.length === 0 ? (
-        <EmptyState onCreateClick={() => setShowCreateModal(true)} />
+        <EmptyState
+          icon={FolderKanban}
+          title="No projects found"
+          description="Get started by creating your first project. You can assign team members and track progress."
+          action={{
+            label: 'Create First Project',
+            onClick: () => setShowCreateModal(true),
+          }}
+          iconColor="text-indigo-500"
+          iconBg="bg-indigo-50 dark:bg-indigo-500/10"
+        />
       ) : view === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {projects.map((project) => (
@@ -197,25 +208,4 @@ export default function AdminProjectsPage() {
   );
 }
 
-function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 gap-4">
-      <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center">
-        <FolderKanban className="w-8 h-8 text-indigo-400" />
-      </div>
-      <div className="text-center">
-        <h3 className="font-semibold text-zinc-800 dark:text-zinc-200 mb-1">No projects found</h3>
-        <p className="text-sm text-zinc-400 max-w-xs">
-          Get started by creating your first project. You can assign team members and track progress.
-        </p>
-      </div>
-      <Button
-        onClick={onCreateClick}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5"
-      >
-        <Plus className="w-4 h-4" />
-        Create First Project
-      </Button>
-    </div>
-  );
-}
+

@@ -15,7 +15,7 @@ export default function DeadlineBadge({ dueDate, compact = false }: DeadlineBadg
 
   if (diffDays <= 1) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/20 select-none animate-pulse">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 ring-1 ring-rose-400/40 select-none">
         <AlertCircle className="w-3 h-3" />
         {compact ? <span>!</span> : <span>URGENT</span>}
       </span>
