@@ -41,6 +41,33 @@ export default function EmployeeAttendancePage() {
   });
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [page, setPage] = useState(1);
+
+  // Fetch all historic logs for statistics and today's check-in
+  const { data: allAttendanceLogs = [] } = useQuery<AttendanceRecord[]>({
+    queryKey: ['employee-attendance-all', selectedMonth],
+    queryFn: async () => {
+      const res = await fetch(`/api/attendance?month=${selectedMonth}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  // Fetch paginated logs for the table
+  const { data: paginatedData, isLoading } = useQuery<{ data: AttendanceRecord[]; total: number; page: number; limit: number }>({
+    queryKey: ['employee-attendance', selectedMonth, statusFilter, page],
+    queryFn: async () => {
+      const params = new URLSearchParams({ month: selectedMonth, page: String(page), limit: '10' });
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      const res = await fetch(`/api/attendance?${params}`);
+      if (!res.ok) throw new Error('Failed to fetch attendance logs');
+      return res.json();
+    },
+  });
+
+  const attendanceLogs = paginatedData?.data ?? [];
+  const total = paginatedData?.total ?? 0;
+  const limit = paginatedData?.limit ?? 10;
 
   // Set running clock
   useEffect(() => {
@@ -50,16 +77,6 @@ export default function EmployeeAttendancePage() {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  // Fetch historic logs for the selected month
-  const { data: attendanceLogs = [], isLoading } = useQuery<AttendanceRecord[]>({
-    queryKey: ['employee-attendance', selectedMonth],
-    queryFn: async () => {
-      const res = await fetch(`/api/attendance?month=${selectedMonth}`);
-      if (!res.ok) throw new Error('Failed to fetch attendance logs');
-      return res.json();
-    },
-  });
 
   // Check In Mutation
   const checkInMutation = useMutation({
@@ -107,7 +124,7 @@ export default function EmployeeAttendancePage() {
 
   // Extract today's record if any
   const todayDateStr = currentTime ? currentTime.toISOString().split('T')[0] : '';
-  const todayRecord = attendanceLogs.find((log) => {
+  const todayRecord = allAttendanceLogs.find((log) => {
     if (!log.date) return false;
     const logDateStr = new Date(log.date).toISOString().split('T')[0];
     return logDateStr === todayDateStr;
@@ -123,17 +140,14 @@ export default function EmployeeAttendancePage() {
     monthOptions.push({ value: val, label });
   }
 
-  // Filter logs for table
-  const filteredLogs = attendanceLogs.filter((log) => {
-    if (statusFilter === 'all') return true;
-    return log.status === statusFilter;
-  });
+  // Filter logs for table (already filtered by server-side query)
+  const filteredLogs = attendanceLogs;
 
-  // Calculate statistics
-  const presentCount = attendanceLogs.filter(
+  // Calculate statistics using all logs of the month
+  const presentCount = allAttendanceLogs.filter(
     (log) => log.status === 'PRESENT' || log.status === 'INCOMPLETE'
   ).length;
-  const totalHours = attendanceLogs.reduce((acc, log) => acc + (log.workHours || 0), 0);
+  const totalHours = allAttendanceLogs.reduce((acc, log) => acc + (log.workHours || 0), 0);
   const averageHours = presentCount > 0 ? (totalHours / presentCount).toFixed(1) : '0.0';
 
   const formatClockTime = (dateStr: string | null) => {
@@ -327,7 +341,7 @@ export default function EmployeeAttendancePage() {
 
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* Month Filter */}
-            <Select value={selectedMonth} onValueChange={(val) => setSelectedMonth(val ?? '')}>
+            <Select value={selectedMonth} onValueChange={(val) => { setSelectedMonth(val ?? ''); setPage(1); }}>
               <SelectTrigger className="w-[180px] h-8 text-xs font-semibold focus:ring-emerald-500 border-zinc-200">
                 <SelectValue placeholder="Select month" />
               </SelectTrigger>
@@ -341,7 +355,7 @@ export default function EmployeeAttendancePage() {
             </Select>
 
             {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val ?? 'all')}>
+            <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val ?? 'all'); setPage(1); }}>
               <SelectTrigger className="w-[130px] h-8 text-xs font-semibold focus:ring-emerald-500 border-zinc-200">
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
@@ -370,61 +384,91 @@ export default function EmployeeAttendancePage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-border text-zinc-400 font-bold uppercase tracking-wider text-[10px] select-none">
-                  <th className="pb-3 pt-1 pl-2">Date</th>
-                  <th className="pb-3 pt-1">Status</th>
-                  <th className="pb-3 pt-1">Clock In</th>
-                  <th className="pb-3 pt-1">Clock Out</th>
-                  <th className="pb-3 pt-1 pr-2 text-right">Work Hours</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
-                {filteredLogs.map((log) => {
-                  const formattedDate = new Date(log.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  });
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-border text-zinc-400 font-bold uppercase tracking-wider text-[10px] select-none">
+                    <th className="pb-3 pt-1 pl-2">Date</th>
+                    <th className="pb-3 pt-1">Status</th>
+                    <th className="pb-3 pt-1">Clock In</th>
+                    <th className="pb-3 pt-1">Clock Out</th>
+                    <th className="pb-3 pt-1 pr-2 text-right">Work Hours</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
+                  {filteredLogs.map((log) => {
+                    const formattedDate = new Date(log.date).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    });
 
-                  return (
-                    <tr key={log.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
-                      <td className="py-3 pl-2 font-semibold text-zinc-800 dark:text-zinc-200">
-                        {formattedDate}
-                      </td>
-                      <td className="py-3">
-                        <span
-                          className={cn(
-                            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider',
-                            log.status === 'PRESENT' && 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-                            log.status === 'ABSENT' && 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400',
-                            log.status === 'INCOMPLETE' && 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                          )}
-                        >
-                          {log.status === 'PRESENT' && <CheckCircle2 className="w-2.5 h-2.5" />}
-                          {log.status === 'ABSENT' && <XCircle className="w-2.5 h-2.5" />}
-                          {log.status === 'INCOMPLETE' && <Clock className="w-2.5 h-2.5" />}
-                          {log.status}
-                        </span>
-                      </td>
-                      <td className="py-3 text-zinc-650 dark:text-zinc-400 font-mono">
-                        {log.status === 'ABSENT' ? '--:--' : formatClockTime(log.checkIn)}
-                      </td>
-                      <td className="py-3 text-zinc-650 dark:text-zinc-400 font-mono">
-                        {log.status === 'ABSENT' || !log.checkOut ? '--:--' : formatClockTime(log.checkOut)}
-                      </td>
-                      <td className="py-3 pr-2 text-right font-bold text-zinc-750 dark:text-zinc-200">
-                        {log.workHours !== null && log.workHours !== undefined ? `${log.workHours.toFixed(2)} hrs` : '--'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    return (
+                      <tr key={log.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
+                        <td className="py-3 pl-2 font-semibold text-zinc-800 dark:text-zinc-200">
+                          {formattedDate}
+                        </td>
+                        <td className="py-3">
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider',
+                              log.status === 'PRESENT' && 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+                              log.status === 'ABSENT' && 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400',
+                              log.status === 'INCOMPLETE' && 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                            )}
+                          >
+                            {log.status === 'PRESENT' && <CheckCircle2 className="w-2.5 h-2.5" />}
+                            {log.status === 'ABSENT' && <XCircle className="w-2.5 h-2.5" />}
+                            {log.status === 'INCOMPLETE' && <Clock className="w-2.5 h-2.5" />}
+                            {log.status}
+                          </span>
+                        </td>
+                        <td className="py-3 text-zinc-650 dark:text-zinc-400 font-mono">
+                          {log.status === 'ABSENT' ? '--:--' : formatClockTime(log.checkIn)}
+                        </td>
+                        <td className="py-3 text-zinc-650 dark:text-zinc-400 font-mono">
+                          {log.status === 'ABSENT' || !log.checkOut ? '--:--' : formatClockTime(log.checkOut)}
+                        </td>
+                        <td className="py-3 pr-2 text-right font-bold text-zinc-750 dark:text-zinc-200">
+                          {log.workHours !== null && log.workHours !== undefined ? `${log.workHours.toFixed(2)} hrs` : '--'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* Pagination */}
+            {total > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border bg-card mt-4 rounded-xl border">
+                <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+                  Showing {total === 0 ? 0 : (page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
+                </p>
+                <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="h-8 text-xs px-3 flex-1 sm:flex-initial"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page * limit >= total}
+                    className="h-8 text-xs px-3 flex-1 sm:flex-initial"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </Card>
     </PageWrapper>

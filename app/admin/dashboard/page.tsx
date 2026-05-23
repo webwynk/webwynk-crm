@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -29,6 +30,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import StatsCard from '@/components/shared/StatsCard';
 import StatusBadge from '@/components/shared/StatusBadge';
 import AvatarStack from '@/components/shared/AvatarStack';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { timeAgo, PROJECT_TYPE_CONFIG, cn } from '@/lib/utils';
 
@@ -146,6 +148,10 @@ const ACTION_LABEL: Record<
 
 export default function AdminDashboardPage() {
   const { data: session } = useSession();
+  const [projectsPage, setProjectsPage] = useState(1);
+  const projectsLimit = 2;
+  const [activitiesPage, setActivitiesPage] = useState(1);
+  const activitiesLimit = 5;
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['dashboard-stats'],
@@ -168,6 +174,18 @@ export default function AdminDashboardPage() {
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
+
+  const totalProjects = stats?.recentProjects?.length ?? 0;
+  const paginatedProjects = stats?.recentProjects?.slice(
+    (projectsPage - 1) * projectsLimit,
+    projectsPage * projectsLimit
+  ) ?? [];
+
+  const totalActivities = activities.length;
+  const paginatedActivities = activities.slice(
+    (activitiesPage - 1) * activitiesLimit,
+    activitiesPage * activitiesLimit
+  );
 
   return (
     <PageWrapper>
@@ -295,7 +313,7 @@ export default function AdminDashboardPage() {
                   compact
                 />
               ) : (
-                stats?.recentProjects?.map((project) => {
+                paginatedProjects.map((project) => {
                   const typeConfig = PROJECT_TYPE_CONFIG[project.type as keyof typeof PROJECT_TYPE_CONFIG];
                   return (
                     <Link
@@ -331,6 +349,33 @@ export default function AdminDashboardPage() {
                 })
               )}
             </div>
+            {totalProjects > projectsLimit && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-border bg-zinc-50/50 dark:bg-zinc-900/10">
+                <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+                  Showing {(projectsPage - 1) * projectsLimit + 1}–{Math.min(projectsPage * projectsLimit, totalProjects)} of {totalProjects}
+                </p>
+                <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setProjectsPage(p => Math.max(1, p - 1))}
+                    disabled={projectsPage <= 1}
+                    className="h-7 text-xs px-2.5 flex-1 sm:flex-initial"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setProjectsPage(p => p + 1)}
+                    disabled={projectsPage * projectsLimit >= totalProjects}
+                    className="h-7 text-xs px-2.5 flex-1 sm:flex-initial"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </PageItem>
 
           {/* Recent Activity */}
@@ -368,7 +413,7 @@ export default function AdminDashboardPage() {
                   <p className="text-xs text-zinc-400">No activity recorded yet.</p>
                 </div>
               ) : (
-                activities.map((log) => {
+                paginatedActivities.map((log) => {
                   const actionInfo = ACTION_LABEL[log.action] || {
                     label: log.action.replace(/_/g, ' '),
                     icon: Pin,
@@ -395,6 +440,33 @@ export default function AdminDashboardPage() {
                 })
               )}
             </div>
+            {totalActivities > activitiesLimit && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-border bg-zinc-50/50 dark:bg-zinc-900/10">
+                <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+                  Showing {(activitiesPage - 1) * activitiesLimit + 1}–{Math.min(activitiesPage * activitiesLimit, totalActivities)} of {totalActivities}
+                </p>
+                <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActivitiesPage(p => Math.max(1, p - 1))}
+                    disabled={activitiesPage <= 1}
+                    className="h-7 text-xs px-2.5 flex-1 sm:flex-initial"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActivitiesPage(p => p + 1)}
+                    disabled={activitiesPage * activitiesLimit >= totalActivities}
+                    className="h-7 text-xs px-2.5 flex-1 sm:flex-initial"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </PageItem>
         </div>
       </div>

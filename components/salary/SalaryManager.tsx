@@ -55,6 +55,9 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
   const [selectedEmployee, setSelectedEmployee] = useState('all');
   const [month, setMonth] = useState(getCurrentYearMonth());
   const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [exportingCSV, setExportingCSV] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newRecord, setNewRecord] = useState({
@@ -75,10 +78,18 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
     },
   });
 
-  const { data: salaries = [], isLoading } = useQuery<SalaryRecord[]>({
-    queryKey: ['salary', selectedEmployee, month, statusFilter],
+  const { data, isLoading } = useQuery<{
+    data: SalaryRecord[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPending: number;
+    totalPaid: number;
+    pendingCount: number;
+  }>({
+    queryKey: ['salary', selectedEmployee, month, statusFilter, page],
     queryFn: async () => {
-      const params = new URLSearchParams({ month });
+      const params = new URLSearchParams({ month, page: String(page), limit: '10' });
       if (selectedEmployee !== 'all') params.set('userId', selectedEmployee);
       if (statusFilter !== 'all') params.set('status', statusFilter);
       const res = await fetch(`/api/salary?${params}`);
@@ -86,6 +97,50 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
       return res.json();
     },
   });
+
+  const salaries = data?.data ?? [];
+  const total = data?.total ?? 0;
+  const limit = data?.limit ?? 10;
+  const totalPending = data?.totalPending ?? 0;
+  const totalPaid = data?.totalPaid ?? 0;
+  const pendingCount = data?.pendingCount ?? 0;
+
+  const handleExportCSV = async () => {
+    setExportingCSV(true);
+    try {
+      const params = new URLSearchParams({ month });
+      if (selectedEmployee !== 'all') params.set('userId', selectedEmployee);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      const res = await fetch(`/api/salary?${params}`);
+      if (!res.ok) throw new Error();
+      const allSalaries = await res.json();
+      exportSalaryCSV(allSalaries, 'salary-payroll');
+    } catch {
+      toast.error('Failed to export CSV');
+    } finally {
+      setExportingCSV(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setExportingPDF(true);
+    try {
+      const params = new URLSearchParams({ month });
+      if (selectedEmployee !== 'all') params.set('userId', selectedEmployee);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      const res = await fetch(`/api/salary?${params}`);
+      if (!res.ok) throw new Error();
+      const allSalaries = await res.json();
+      const empName = selectedEmployee === 'all'
+        ? 'All Employees'
+        : (employees.find(e => e.id === selectedEmployee)?.name || 'Employee');
+      exportSalaryPDF(allSalaries, empName, month);
+    } catch {
+      toast.error('Failed to export PDF');
+    } finally {
+      setExportingPDF(false);
+    }
+  };
 
   const handleMarkPaid = async (id: string, name: string) => {
     try {
@@ -141,28 +196,27 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
     }
   };
 
-  const totalPending = salaries.filter((s) => s.status === 'PENDING').reduce((acc, s) => acc + s.amount, 0);
-  const totalPaid = salaries.filter((s) => s.status === 'PAID').reduce((acc, s) => acc + s.amount, 0);
-
   return (
     <PageWrapper>
       <PageHeader title="Salary Payroll" subtitle="Manage and track employee salary payments">
         <Button
           variant="outline"
           size="sm"
+          disabled={exportingCSV}
           className="h-8 text-sm gap-1.5 text-zinc-600 hover:text-zinc-900"
-          onClick={() => exportSalaryCSV(salaries, "salary-payroll")}
+          onClick={handleExportCSV}
         >
-          <Download className="w-3.5 h-3.5" />
+          {exportingCSV ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
           Export CSV
         </Button>
         <Button
           variant="outline"
           size="sm"
+          disabled={exportingPDF}
           className="h-8 text-sm gap-1.5 text-zinc-600 hover:text-zinc-900"
-          onClick={() => exportSalaryPDF(salaries, selectedEmployee === 'all' ? 'All Employees' : (employees.find(e => e.id === selectedEmployee)?.name || 'Employee'), month)}
+          onClick={handleExportPDF}
         >
-          <Download className="w-3.5 h-3.5" />
+          {exportingPDF ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
           Export PDF
         </Button>
         <Button
@@ -182,10 +236,10 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: 'Total Records', value: salaries.length.toString(), color: 'text-zinc-900 dark:text-zinc-50' },
+          { label: 'Total Records', value: total.toString(), color: 'text-zinc-900 dark:text-zinc-50' },
           { label: 'Pending Amount', value: formatINR(totalPending), color: 'text-amber-600' },
           { label: 'Paid Amount', value: formatINR(totalPaid), color: 'text-emerald-600' },
-          { label: 'Pending Count', value: salaries.filter((s) => s.status === 'PENDING').length.toString(), color: 'text-orange-600' },
+          { label: 'Pending Count', value: pendingCount.toString(), color: 'text-orange-600' },
         ].map((card) => (
           <div key={card.label} className="bg-card border border-border rounded-xl p-4 shadow-card text-center">
             <p className={`text-xl font-bold ${card.color}`}>{card.value}</p>
@@ -196,7 +250,7 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <Select value={selectedEmployee} onValueChange={(v) => setSelectedEmployee(v ?? 'all')}>
+        <Select value={selectedEmployee} onValueChange={(v) => { setSelectedEmployee(v ?? 'all'); setPage(1); }}>
           <SelectTrigger id="salary-employee-filter" className="w-44 text-sm h-9">
             <SelectValue placeholder="All Employees" />
           </SelectTrigger>
@@ -212,14 +266,14 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
           id="salary-month-filter"
           type="month"
           value={month}
-          onChange={(e) => setMonth(e.target.value)}
+          onChange={(e) => { setMonth(e.target.value); setPage(1); }}
           className={cn(
             'w-44 text-sm h-9',
             isHR ? 'focus-visible:ring-sky-500' : 'focus-visible:ring-indigo-500'
           )}
         />
 
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? 'all')}>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v ?? 'all'); setPage(1); }}>
           <SelectTrigger id="salary-status-filter" className="w-36 text-sm h-9">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
@@ -379,6 +433,34 @@ export default function SalaryManager({ role }: SalaryManagerProps) {
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+          {total > limit && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border bg-card">
+              <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+                Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
+              </p>
+              <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="h-8 text-xs px-3 flex-1 sm:flex-initial"
+                >
+                  Prev
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page * limit >= total}
+                  className="h-8 text-xs px-3 flex-1 sm:flex-initial"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </PageWrapper>

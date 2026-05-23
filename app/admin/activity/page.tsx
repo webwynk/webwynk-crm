@@ -23,9 +23,10 @@ import PageWrapper from '@/components/shared/PageWrapper';
 import PageHeader from '@/components/shared/PageHeader';
 import RoleBadge from '@/components/shared/RoleBadge';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-import { getInitials, timeAgo, cn } from '@/lib/utils';
+import { getInitials, timeAgo, cn, formatDateTime } from '@/lib/utils';
 
 interface ActivityLog {
   id: string;
@@ -125,12 +126,54 @@ const ACTION_LABEL: Record<
 export default function AdminActivityPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [dateFilterType, setDateFilterType] = useState<'today' | 'past'>('today');
+
+  const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = getLocalDateString(new Date());
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoStr = getLocalDateString(sevenDaysAgo);
+
+  const [fromDate, setFromDate] = useState(sevenDaysAgoStr);
+  const [toDate, setToDate] = useState(todayStr);
 
   const { data, isLoading } = useQuery<{ logs: ActivityLog[]; total: number; page: number; limit: number }>({
-    queryKey: ['activity', search, page],
+    queryKey: ['activity', search, page, dateFilterType, fromDate, toDate],
     queryFn: async () => {
-      const params = new URLSearchParams({ page: String(page), limit: '20' });
+      const params = new URLSearchParams({ page: String(page), limit: '10' });
       if (search) params.set('action', search);
+
+      let fromISO = '';
+      let toISO = '';
+      if (dateFilterType === 'today') {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+        fromISO = todayStart.toISOString();
+        toISO = todayEnd.toISOString();
+      } else {
+        if (fromDate) {
+          try {
+            fromISO = new Date(`${fromDate}T00:00:00`).toISOString();
+          } catch {}
+        }
+        if (toDate) {
+          try {
+            toISO = new Date(`${toDate}T23:59:59.999`).toISOString();
+          } catch {}
+        }
+      }
+
+      if (fromISO) params.set('from', fromISO);
+      if (toISO) params.set('to', toISO);
+
       const res = await fetch(`/api/activity?${params}`);
       if (!res.ok) throw new Error('Failed');
       return res.json();
@@ -140,6 +183,7 @@ export default function AdminActivityPage() {
 
   const logs = data?.logs ?? [];
   const total = data?.total ?? 0;
+  const limit = data?.limit ?? 10;
 
   return (
     <PageWrapper>
@@ -148,16 +192,79 @@ export default function AdminActivityPage() {
         subtitle={`${total} total activities recorded`}
       />
 
-      {/* Search */}
-      <div className="relative mb-6 max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-        <Input
-          id="activity-search"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          placeholder="Filter by action type..."
-          className="pl-9 text-sm h-9"
-        />
+      {/* Filters and Search Toolbar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        {/* Search */}
+        <div className="relative max-w-sm w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Input
+            id="activity-search"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Filter by action type..."
+            className="pl-9 text-sm h-9 w-full"
+          />
+        </div>
+
+        {/* Date Filter Controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {/* Toggle buttons */}
+          <div className="flex bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-border self-start sm:self-auto">
+            <button
+              onClick={() => {
+                setDateFilterType('today');
+                setPage(1);
+              }}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer",
+                dateFilterType === 'today'
+                  ? "bg-card text-zinc-900 dark:text-zinc-50 shadow-sm"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-305"
+              )}
+            >
+              Today
+            </button>
+            <button
+              onClick={() => {
+                setDateFilterType('past');
+                setPage(1);
+              }}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer",
+                dateFilterType === 'past'
+                  ? "bg-card text-zinc-900 dark:text-zinc-50 shadow-sm"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-305"
+              )}
+            >
+              Past (Calendar)
+            </button>
+          </div>
+
+          {/* Custom Date Inputs */}
+          {dateFilterType === 'past' && (
+            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  setPage(1);
+                }}
+                className="text-xs h-9 w-[130px] px-2 py-1"
+              />
+              <span className="text-xs text-zinc-400">to</span>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setPage(1);
+                }}
+                className="text-xs h-9 w-[130px] px-2 py-1"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -229,8 +336,13 @@ export default function AdminActivityPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-[10px] text-zinc-400 whitespace-nowrap">
-                          {timeAgo(log.createdAt)}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">
+                            {formatDateTime(log.createdAt)}
+                          </div>
+                          <div className="text-[10px] text-zinc-400 mt-0.5">
+                            {timeAgo(log.createdAt)}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -241,26 +353,30 @@ export default function AdminActivityPage() {
           </div>
 
           {/* Pagination */}
-          {total > 20 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-              <p className="text-xs text-zinc-400">
-                Showing {(page - 1) * 20 + 1}–{Math.min(page * 20, total)} of {total}
+          {total > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border bg-card">
+              <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+                Showing {total === 0 ? 0 : (page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
               </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+              <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="px-3 py-1 text-xs border border-border rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900/40 disabled:opacity-40"
+                  className="h-8 text-xs px-3 flex-1 sm:flex-initial"
                 >
                   Prev
-                </button>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={page * 20 >= total}
-                  className="px-3 py-1 text-xs border border-border rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900/40 disabled:opacity-40"
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page * limit >= total}
+                  className="h-8 text-xs px-3 flex-1 sm:flex-initial"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
           )}

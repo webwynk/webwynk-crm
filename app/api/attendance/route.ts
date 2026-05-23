@@ -14,6 +14,11 @@ export async function GET(request: Request) {
     const userId = searchParams.get('userId');
     const month = searchParams.get('month'); // YYYY-MM
     const status = searchParams.get('status');
+    const search = searchParams.get('search');
+
+    const pageParam = searchParams.get('page');
+    const page = pageParam ? parseInt(pageParam, 10) : null;
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
 
     const where: Record<string, unknown> = {};
 
@@ -33,17 +38,40 @@ export async function GET(request: Request) {
 
     if (status) where.status = status;
 
-    const attendance = await prisma.attendance.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      include: {
-        user: {
-          select: { id: true, name: true, avatar: true, designation: true },
-        },
-      },
-    });
+    if (search) {
+      where.user = {
+        name: { contains: search, mode: 'insensitive' },
+      };
+    }
 
-    return NextResponse.json(attendance);
+    if (page !== null) {
+      const [attendance, total] = await Promise.all([
+        prisma.attendance.findMany({
+          where,
+          orderBy: { date: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+          include: {
+            user: {
+              select: { id: true, name: true, avatar: true, designation: true },
+            },
+          },
+        }),
+        prisma.attendance.count({ where }),
+      ]);
+      return NextResponse.json({ data: attendance, total, page, limit });
+    } else {
+      const attendance = await prisma.attendance.findMany({
+        where,
+        orderBy: { date: 'desc' },
+        include: {
+          user: {
+            select: { id: true, name: true, avatar: true, designation: true },
+          },
+        },
+      });
+      return NextResponse.json(attendance);
+    }
   } catch (error) {
     console.error('[ATTENDANCE_GET]', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

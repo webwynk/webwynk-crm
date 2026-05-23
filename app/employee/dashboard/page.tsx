@@ -68,6 +68,8 @@ export default function EmployeeDashboardPage() {
   const { data: session } = useSession();
   const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [projectsPage, setProjectsPage] = useState(1);
+  const projectsLimit = 2;
 
   // Set running clock
   useEffect(() => {
@@ -169,6 +171,13 @@ export default function EmployeeDashboardPage() {
     const monthName = date.toLocaleDateString('en-US', { month: 'short' });
     return `Received for ${monthName}`;
   };
+
+  const activeProjects = stats?.recentProjects ?? [];
+  const totalProjects = activeProjects.length;
+  const paginatedProjects = activeProjects.slice(
+    (projectsPage - 1) * projectsLimit,
+    projectsPage * projectsLimit
+  );
 
   return (
     <PageWrapper>
@@ -284,84 +293,113 @@ export default function EmployeeDashboardPage() {
                 </div>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {stats.recentProjects.map((project) => (
-                  <Card
-                    key={project.id}
-                    className="p-4 border border-border bg-card hover:border-emerald-250 dark:hover:border-emerald-500/20 transition-all shadow-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group"
-                  >
-                    <div className="space-y-1.5 min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
-                          {project.type.replace('_', ' ')}
-                        </span>
-                        <StatusBadge status={project.status} />
-                      </div>
-                      <h4 className="font-extrabold text-sm text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                        {project.title}
-                      </h4>
-                      <p className="text-[11px] text-zinc-450 dark:text-zinc-500 line-clamp-1 max-w-lg">
-                        {project.description || 'No description provided.'}
-                      </p>
-                      
-                      {/* Team Avatars */}
-                      <div className="flex items-center gap-1.5 pt-1.5">
-                        <div className="flex -space-x-1.5 overflow-hidden">
-                          {project.assignments.map((assign) => (
-                            <Avatar
-                              key={assign.id}
-                              className="w-5 h-5 border-2 border-card ring-1 ring-border"
-                              title={assign.user.name}
-                            >
-                              <AvatarImage
-                                src={assign.user.avatar || undefined}
-                                className="object-cover"
-                              />
-                              <AvatarFallback className="bg-zinc-100 text-zinc-700 text-[7px] font-extrabold">
-                                {getInitials(assign.user.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
-                        </div>
-                        <span className="text-[9px] text-zinc-400 font-medium">
-                          {project.assignments.length} team members
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex sm:flex-col items-end gap-3 sm:gap-2 shrink-0 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-border justify-between sm:justify-start">
-                      {/* Due Date & Progress */}
-                      <div className="text-left sm:text-right space-y-1">
-                        <span className="text-[10px] text-zinc-400 flex items-center gap-1 sm:justify-end">
-                          <Calendar className="w-3 h-3" />
-                          Due: {project.dueDate ? formatDate(project.dueDate) : 'No due date'}
-                        </span>
-                        <div className="flex items-center gap-2 sm:justify-end">
-                          <span className="text-[10px] font-bold text-emerald-650 dark:text-emerald-400">
-                            {project.progress}% Done
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  {paginatedProjects.map((project) => (
+                    <Card
+                      key={project.id}
+                      className="p-4 border border-border bg-card hover:border-emerald-250 dark:hover:border-emerald-500/20 transition-all shadow-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group"
+                    >
+                      <div className="space-y-1.5 min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
+                            {project.type.replace('_', ' ')}
                           </span>
-                          <div className="w-16 bg-zinc-150 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
-                            <div
-                              className="bg-emerald-500 h-full rounded-full"
-                              style={{ width: `${project.progress}%` }}
-                            />
+                          <StatusBadge status={project.status} />
+                        </div>
+                        <h4 className="font-extrabold text-sm text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-650 dark:group-hover:text-emerald-400 transition-colors">
+                          {project.title}
+                        </h4>
+                        <p className="text-[11px] text-zinc-450 dark:text-zinc-500 line-clamp-1 max-w-lg">
+                          {project.description || 'No description provided.'}
+                        </p>
+                        
+                        {/* Team Avatars */}
+                        <div className="flex items-center gap-1.5 pt-1.5">
+                          <div className="flex -space-x-1.5 overflow-hidden">
+                            {project.assignments.map((assign) => (
+                              <Avatar
+                                key={assign.id}
+                                className="w-5 h-5 border-2 border-card ring-1 ring-border"
+                                title={assign.user.name}
+                              >
+                                <AvatarImage
+                                  src={assign.user.avatar || undefined}
+                                  className="object-cover"
+                                />
+                                <AvatarFallback className="bg-zinc-100 text-zinc-700 text-[7px] font-extrabold">
+                                  {getInitials(assign.user.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                            ))}
+                          </div>
+                          <span className="text-[9px] text-zinc-400 font-medium">
+                            {project.assignments.length} team members
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex sm:flex-col items-end gap-3 sm:gap-2 shrink-0 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-border justify-between sm:justify-start">
+                        {/* Due Date & Progress */}
+                        <div className="text-left sm:text-right space-y-1">
+                          <span className="text-[10px] text-zinc-400 flex items-center gap-1 sm:justify-end">
+                            <Calendar className="w-3 h-3" />
+                            Due: {project.dueDate ? formatDate(project.dueDate) : 'No due date'}
+                          </span>
+                          <div className="flex items-center gap-2 sm:justify-end">
+                            <span className="text-[10px] font-bold text-emerald-650 dark:text-emerald-400">
+                              {project.progress}% Done
+                            </span>
+                            <div className="w-16 bg-zinc-150 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
+                              <div
+                                className="bg-emerald-500 h-full rounded-full"
+                                style={{ width: `${project.progress}%` }}
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <Link href={`/employee/projects/${project.id}`} passHref>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 gap-0.5 px-3 border border-emerald-100 dark:border-emerald-950"
-                        >
-                          View Details
-                          <ArrowRight className="w-3 h-3" />
-                        </Button>
-                      </Link>
+                        <Link href={`/employee/projects/${project.id}`} passHref>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 text-[11px] font-bold text-emerald-650 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 gap-0.5 px-3 border border-emerald-100 dark:border-emerald-950"
+                          >
+                            View Details
+                            <ArrowRight className="w-3 h-3" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+                {totalProjects > projectsLimit && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border border-border rounded-xl bg-zinc-50/50 dark:bg-zinc-900/10">
+                    <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+                      Showing {(projectsPage - 1) * projectsLimit + 1}–{Math.min(projectsPage * projectsLimit, totalProjects)} of {totalProjects}
+                    </p>
+                    <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setProjectsPage(p => Math.max(1, p - 1))}
+                        disabled={projectsPage <= 1}
+                        className="h-7 text-xs px-2.5 flex-1 sm:flex-initial"
+                      >
+                        Prev
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setProjectsPage(p => p + 1)}
+                        disabled={projectsPage * projectsLimit >= totalProjects}
+                        className="h-7 text-xs px-2.5 flex-1 sm:flex-initial"
+                      >
+                        Next
+                      </Button>
                     </div>
-                  </Card>
-                ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

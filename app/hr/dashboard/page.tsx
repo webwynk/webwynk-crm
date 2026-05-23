@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -16,6 +17,7 @@ import StatsCard from '@/components/shared/StatsCard';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { getInitials, formatINR, formatTime } from '@/lib/utils';
 
 interface HRStats {
@@ -58,6 +60,10 @@ interface Notification {
 
 export default function HRDashboardPage() {
   const { data: session } = useSession();
+  const [watchlistPage, setWatchlistPage] = useState(1);
+  const watchlistLimit = 5;
+  const [highlightsPage, setHighlightsPage] = useState(1);
+  const highlightsLimit = 5;
 
   const { data: stats, isLoading: statsLoading } = useQuery<HRStats>({
     queryKey: ['hr-dashboard-stats'],
@@ -80,6 +86,20 @@ export default function HRDashboardPage() {
   });
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const watchlist = stats?.attendanceWatchlist ?? [];
+  const totalWatchlist = watchlist.length;
+  const paginatedWatchlist = watchlist.slice(
+    (watchlistPage - 1) * watchlistLimit,
+    watchlistPage * watchlistLimit
+  );
+
+  const highlights = stats?.payrollHighlights ?? [];
+  const totalHighlights = highlights.length;
+  const paginatedHighlights = highlights.slice(
+    (highlightsPage - 1) * highlightsLimit,
+    highlightsPage * highlightsLimit
+  );
 
   return (
     <PageWrapper>
@@ -195,7 +215,7 @@ export default function HRDashboardPage() {
                   </p>
                 </div>
               ) : (
-                stats?.attendanceWatchlist?.map((record) => (
+                paginatedWatchlist.map((record) => (
                   <div
                     key={record.id}
                     className="flex items-center justify-between px-5 py-3.5 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10 transition-colors"
@@ -230,6 +250,33 @@ export default function HRDashboardPage() {
                 ))
               )}
             </div>
+            {totalWatchlist > watchlistLimit && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-border bg-zinc-50/50 dark:bg-zinc-900/10">
+                <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+                  Showing {(watchlistPage - 1) * watchlistLimit + 1}–{Math.min(watchlistPage * watchlistLimit, totalWatchlist)} of {totalWatchlist}
+                </p>
+                <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setWatchlistPage(p => Math.max(1, p - 1))}
+                    disabled={watchlistPage <= 1}
+                    className="h-7 text-xs px-2.5 flex-1 sm:flex-initial"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setWatchlistPage(p => p + 1)}
+                    disabled={watchlistPage * watchlistLimit >= totalWatchlist}
+                    className="h-7 text-xs px-2.5 flex-1 sm:flex-initial"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Payroll Highlights */}
@@ -270,7 +317,7 @@ export default function HRDashboardPage() {
                   </p>
                 </div>
               ) : (
-                stats?.payrollHighlights?.map((record) => (
+                paginatedHighlights.map((record) => (
                   <div
                     key={record.id}
                     className="flex items-center justify-between px-5 py-3.5 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10 transition-colors"
@@ -304,6 +351,33 @@ export default function HRDashboardPage() {
                 ))
               )}
             </div>
+            {totalHighlights > highlightsLimit && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-border bg-zinc-50/50 dark:bg-zinc-900/10">
+                <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+                  Showing {(highlightsPage - 1) * highlightsLimit + 1}–{Math.min(highlightsPage * highlightsLimit, totalHighlights)} of {totalHighlights}
+                </p>
+                <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setHighlightsPage(p => Math.max(1, p - 1))}
+                    disabled={highlightsPage <= 1}
+                    className="h-7 text-xs px-2.5 flex-1 sm:flex-initial"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setHighlightsPage(p => p + 1)}
+                    disabled={highlightsPage * highlightsLimit >= totalHighlights}
+                    className="h-7 text-xs px-2.5 flex-1 sm:flex-initial"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

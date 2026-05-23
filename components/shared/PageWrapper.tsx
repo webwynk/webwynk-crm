@@ -31,7 +31,7 @@ export default function PageWrapper({ children, className }: { children: React.R
       initial="hidden"
       animate="visible"
       variants={parentVariants}
-      className={className || "w-full h-full"}
+      className={className || "w-full min-h-full flex flex-col pb-20 md:pb-0"}
     >
       {children}
     </motion.div>

@@ -44,21 +44,35 @@ export default function EmployeeSalaryPage() {
   const [selectedSalary, setSelectedSalary] = useState<SalaryRecord | null>(null);
   const [isSlipOpen, setIsSlipOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [page, setPage] = useState(1);
 
-  // Fetch salary history
-  const { data: salaries = [], isLoading } = useQuery<SalaryRecord[]>({
-    queryKey: ['employee-salaries'],
+  // Fetch all salary slips for statistics
+  const { data: allSalaries = [] } = useQuery<SalaryRecord[]>({
+    queryKey: ['employee-salaries-all'],
     queryFn: async () => {
       const res = await fetch('/api/salary');
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  // Fetch paginated salary history
+  const { data: paginatedData, isLoading } = useQuery<{ data: SalaryRecord[]; total: number; page: number; limit: number }>({
+    queryKey: ['employee-salaries', statusFilter, page],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: '10' });
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      const res = await fetch(`/api/salary?${params}`);
       if (!res.ok) throw new Error('Failed to fetch salaries');
       return res.json();
     },
   });
 
-  const filteredSalaries = salaries.filter((sal) => {
-    if (statusFilter === 'all') return true;
-    return sal.status === statusFilter;
-  });
+  const salaries = paginatedData?.data ?? [];
+  const total = paginatedData?.total ?? 0;
+  const limit = paginatedData?.limit ?? 10;
+
+  const filteredSalaries = salaries;
 
   const handleOpenSlip = (salary: SalaryRecord) => {
     setSelectedSalary(salary);
@@ -151,7 +165,7 @@ export default function EmployeeSalaryPage() {
           <div className="mt-3">
             <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50">
               ₹
-              {salaries
+              {allSalaries
                 .filter((s) => s.status === 'PAID')
                 .reduce((acc, curr) => acc + curr.amount, 0)
                 .toLocaleString('en-IN')}
@@ -173,10 +187,10 @@ export default function EmployeeSalaryPage() {
           </div>
           <div className="mt-3">
             <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50">
-              {salaries.length > 0 ? `₹${salaries[0].amount.toLocaleString('en-IN')}` : '₹0'}
+              {allSalaries.length > 0 ? `₹${allSalaries[0].amount.toLocaleString('en-IN')}` : '₹0'}
             </span>
             <span className="text-[10px] text-zinc-400 block mt-1">
-              {salaries.length > 0 ? `Month: ${getMonthName(salaries[0].month)}` : 'No salaries recorded'}
+              {allSalaries.length > 0 ? `Month: ${getMonthName(allSalaries[0].month)}` : 'No salaries recorded'}
             </span>
           </div>
         </Card>
@@ -192,9 +206,9 @@ export default function EmployeeSalaryPage() {
           </div>
           <div className="mt-3">
             <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50">
-              {salaries.filter((s) => s.status === 'PENDING').length}
+              {allSalaries.filter((s) => s.status === 'PENDING').length}
             </span>
-            <span className="text-[10px] text-zinc-400 block mt-1">
+            <span className="text-[10px] text-zinc-450 block mt-1">
               Salaries awaiting payment verification
             </span>
           </div>
@@ -210,7 +224,7 @@ export default function EmployeeSalaryPage() {
           </h2>
 
           <div className="flex items-center gap-2">
-            <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val ?? 'all')}>
+            <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val ?? 'all'); setPage(1); }}>
               <SelectTrigger className="w-[140px] h-8 text-xs font-semibold focus:ring-emerald-500 border-zinc-200">
                 <SelectValue placeholder="Status Filter" />
               </SelectTrigger>
@@ -239,67 +253,97 @@ export default function EmployeeSalaryPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-border text-zinc-400 font-bold uppercase tracking-wider text-[10px] select-none">
-                  <th className="pb-3 pt-1 pl-2">Pay Period</th>
-                  <th className="pb-3 pt-1">Amount</th>
-                  <th className="pb-3 pt-1">Status</th>
-                  <th className="pb-3 pt-1">Payment Date</th>
-                  <th className="pb-3 pt-1">Notes</th>
-                  <th className="pb-3 pt-1 pr-2 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
-                {filteredSalaries.map((salary) => (
-                  <tr key={salary.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
-                    <td className="py-3.5 pl-2 font-bold text-zinc-800 dark:text-zinc-200">
-                      {getMonthName(salary.month)}
-                    </td>
-                    <td className="py-3.5 font-bold text-zinc-900 dark:text-zinc-100">
-                      ₹{salary.amount.toLocaleString('en-IN')}
-                    </td>
-                    <td className="py-3.5">
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider',
-                          salary.status === 'PAID' && 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-                          salary.status === 'PENDING' && 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400',
-                          salary.status === 'PARTIAL' && 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-                        )}
-                      >
-                        {salary.status === 'PAID' && <CheckCircle2 className="w-2.5 h-2.5" />}
-                        {salary.status === 'PENDING' && <Clock className="w-2.5 h-2.5" />}
-                        {salary.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 text-zinc-500 dark:text-zinc-400">
-                      {salary.paidAt ? formatDate(salary.paidAt) : 'Pending Verification'}
-                    </td>
-                    <td className="py-3.5 text-zinc-500 dark:text-zinc-400 max-w-[200px] truncate">
-                      {salary.note || 'Regular Monthly Payout'}
-                    </td>
-                    <td className="py-3.5 pr-2 text-right">
-                      {salary.status === 'PAID' ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleOpenSlip(salary)}
-                          className="h-8 border-emerald-250 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-700 text-xs font-bold gap-1 px-3"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          View Slip
-                        </Button>
-                      ) : (
-                        <span className="text-[10px] text-zinc-400 italic">Verifying Slip...</span>
-                      )}
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-border text-zinc-400 font-bold uppercase tracking-wider text-[10px] select-none">
+                    <th className="pb-3 pt-1 pl-2">Pay Period</th>
+                    <th className="pb-3 pt-1">Amount</th>
+                    <th className="pb-3 pt-1">Status</th>
+                    <th className="pb-3 pt-1">Payment Date</th>
+                    <th className="pb-3 pt-1">Notes</th>
+                    <th className="pb-3 pt-1 pr-2 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
+                  {filteredSalaries.map((salary) => (
+                    <tr key={salary.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
+                      <td className="py-3.5 pl-2 font-bold text-zinc-800 dark:text-zinc-200">
+                        {getMonthName(salary.month)}
+                      </td>
+                      <td className="py-3.5 font-bold text-zinc-900 dark:text-zinc-100">
+                        ₹{salary.amount.toLocaleString('en-IN')}
+                      </td>
+                      <td className="py-3.5">
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider',
+                            salary.status === 'PAID' && 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+                            salary.status === 'PENDING' && 'bg-amber-50 dark:bg-amber-550/10 text-amber-600 dark:text-amber-400',
+                            salary.status === 'PARTIAL' && 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                          )}
+                        >
+                          {salary.status === 'PAID' && <CheckCircle2 className="w-2.5 h-2.5" />}
+                          {salary.status === 'PENDING' && <Clock className="w-2.5 h-2.5" />}
+                          {salary.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 text-zinc-550 dark:text-zinc-400">
+                        {salary.paidAt ? formatDate(salary.paidAt) : 'Pending Verification'}
+                      </td>
+                      <td className="py-3.5 text-zinc-550 dark:text-zinc-400 max-w-[200px] truncate">
+                        {salary.note || 'Regular Monthly Payout'}
+                      </td>
+                      <td className="py-3.5 pr-2 text-right">
+                        {salary.status === 'PAID' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleOpenSlip(salary)}
+                            className="h-8 border-emerald-250 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-700 text-xs font-bold gap-1 px-3"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            View Slip
+                          </Button>
+                        ) : (
+                          <span className="text-[10px] text-zinc-400 italic">Verifying Slip...</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Pagination */}
+            {total > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border bg-card mt-4 rounded-xl border">
+                <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+                  Showing {total === 0 ? 0 : (page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
+                </p>
+                <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="h-8 text-xs px-3 flex-1 sm:flex-initial"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page * limit >= total}
+                    className="h-8 text-xs px-3 flex-1 sm:flex-initial"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </Card>
 

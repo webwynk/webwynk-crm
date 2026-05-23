@@ -207,7 +207,7 @@ export default function ChatLayout({ accent }: ChatLayoutProps) {
         subtitle="Connect and collaborate with the agency team in real time"
       />
 
-      <div className="flex h-[calc(100vh-12rem)] md:h-[calc(100vh-14rem)] border border-border bg-card rounded-2xl overflow-hidden shadow-card">
+      <div className="flex h-[calc(100vh-14.5rem)] md:h-[calc(100vh-14rem)] border border-border bg-card rounded-2xl overflow-hidden shadow-card">
         {/* Sidebar Channels List - Hidden on small mobile to maximize chat space */}
         <div className="hidden sm:flex flex-col w-64 border-r border-border bg-zinc-50/50 dark:bg-zinc-950/20 shrink-0">
           <div className="p-4 border-b border-border">

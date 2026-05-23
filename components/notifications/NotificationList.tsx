@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { 
@@ -85,10 +86,13 @@ export default function NotificationList({ accent }: NotificationListProps) {
   const isSky = accent === 'sky';
   const isEmerald = accent === 'emerald';
 
-  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
-    queryKey: ['notifications'],
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  const { data: paginatedData, isLoading } = useQuery<{ data: Notification[]; total: number; page: number; limit: number }>({
+    queryKey: ['notifications', page],
     queryFn: async () => {
-      const res = await fetch('/api/notifications');
+      const res = await fetch(`/api/notifications?page=${page}&limit=${limit}`);
       if (!res.ok) throw new Error('Failed');
       return res.json();
     },
@@ -96,7 +100,20 @@ export default function NotificationList({ accent }: NotificationListProps) {
     refetchInterval: 30_000,
   });
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const { data: unreadData } = useQuery<{ count: number }>({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: async () => {
+      const res = await fetch('/api/notifications/unread-count');
+      if (!res.ok) return { count: 0 };
+      return res.json();
+    },
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+  });
+
+  const notifications = paginatedData?.data ?? [];
+  const total = paginatedData?.total ?? 0;
+  const unreadCount = unreadData?.count ?? 0;
 
   const handleMarkAll = async () => {
     try {
@@ -219,6 +236,33 @@ export default function NotificationList({ accent }: NotificationListProps) {
             </div>
           );
         })}
+        {total > limit && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border bg-card mt-4 rounded-xl border">
+            <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+              Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
+            </p>
+            <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="h-8 text-xs px-3 flex-1 sm:flex-initial"
+              >
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => p + 1)}
+                disabled={page * limit >= total}
+                className="h-8 text-xs px-3 flex-1 sm:flex-initial"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
       )}
     </PageWrapper>

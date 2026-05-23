@@ -16,6 +16,32 @@ export async function GET(request: Request) {
     const where: Record<string, unknown> = { userId: session.user.id };
     if (unreadOnly) where.isRead = false;
 
+    const pageParam = searchParams.get('page');
+    if (pageParam !== null) {
+      const page = Math.max(1, parseInt(pageParam, 10) || 1);
+      const limit = Math.max(1, parseInt(searchParams.get('limit') || '10', 10));
+      const skip = (page - 1) * limit;
+
+      const [notifications, total] = await Promise.all([
+        prisma.notification.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        prisma.notification.count({
+          where,
+        }),
+      ]);
+
+      return NextResponse.json({
+        data: notifications,
+        total,
+        page,
+        limit,
+      });
+    }
+
     const notifications = await prisma.notification.findMany({
       where,
       orderBy: { createdAt: 'desc' },

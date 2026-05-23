@@ -55,7 +55,9 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
   const [month, setMonth] = useState(getCurrentYearMonth());
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [markingAbsent, setMarkingAbsent] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const isHR = role === 'HR';
 
@@ -68,23 +70,42 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
     },
   });
 
-  const { data: records = [], isLoading } = useQuery<AttendanceRecord[]>({
-    queryKey: ['attendance', selectedEmployee, month, statusFilter],
+  const { data, isLoading } = useQuery<{ data: AttendanceRecord[]; total: number; page: number; limit: number }>({
+    queryKey: ['attendance', selectedEmployee, month, statusFilter, search, page],
     queryFn: async () => {
-      const params = new URLSearchParams({ month });
+      const params = new URLSearchParams({ month, page: String(page), limit: '10' });
       if (selectedEmployee !== 'all') params.set('userId', selectedEmployee);
       if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (search) params.set('search', search);
       const res = await fetch(`/api/attendance?${params}`);
       if (!res.ok) throw new Error('Failed to fetch attendance');
       return res.json();
     },
   });
 
-  const filtered = records.filter(
-    (r) =>
-      !search ||
-      r.user.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const records = data?.data ?? [];
+  const total = data?.total ?? 0;
+  const limit = data?.limit ?? 10;
+
+  const filtered = records;
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ month });
+      if (selectedEmployee !== 'all') params.set('userId', selectedEmployee);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (search) params.set('search', search);
+      const res = await fetch(`/api/attendance?${params}`);
+      if (!res.ok) throw new Error();
+      const allRecords = await res.json();
+      exportAttendanceCSV(allRecords, `attendance-${month}`);
+    } catch {
+      toast.error('Failed to export CSV');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleMarkAbsent = async (userId: string, date: string, name: string) => {
     if (!confirm(`Mark ${name} as absent on ${formatDate(date)}?`)) return;
@@ -128,17 +149,18 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
         <Button
           variant="outline"
           size="sm"
+          disabled={exporting}
           className="h-8 text-sm gap-1.5 text-zinc-600 hover:text-zinc-900"
-          onClick={() => exportAttendanceCSV(filtered, `attendance-${month}`)}
+          onClick={handleExport}
         >
-          <Download className="w-3.5 h-3.5" />
+          {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
           Export CSV
         </Button>
       </PageHeader>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <Select value={selectedEmployee} onValueChange={(v) => setSelectedEmployee(v ?? 'all')}>
+        <Select value={selectedEmployee} onValueChange={(v) => { setSelectedEmployee(v ?? 'all'); setPage(1); }}>
           <SelectTrigger id="attendance-employee-filter" className="w-44 text-sm h-9">
             <SelectValue placeholder="All Employees" />
           </SelectTrigger>
@@ -154,14 +176,14 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
           id="attendance-month-filter"
           type="month"
           value={month}
-          onChange={(e) => setMonth(e.target.value)}
+          onChange={(e) => { setMonth(e.target.value); setPage(1); }}
           className={cn(
             'w-44 text-sm h-9',
             isHR ? 'focus-visible:ring-sky-500' : 'focus-visible:ring-indigo-500'
           )}
         />
 
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? 'all')}>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v ?? 'all'); setPage(1); }}>
           <SelectTrigger id="attendance-status-filter" className="w-36 text-sm h-9">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
@@ -178,7 +200,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
           <Input
             id="attendance-search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search employee..."
             className={cn(
               'pl-8 text-sm h-9',
@@ -286,6 +308,34 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+          {total > limit && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border bg-card">
+              <p className="text-xs text-zinc-400 order-2 sm:order-1 text-center sm:text-left font-medium">
+                Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
+              </p>
+              <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="h-8 text-xs px-3 flex-1 sm:flex-initial"
+                >
+                  Prev
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page * limit >= total}
+                  className="h-8 text-xs px-3 flex-1 sm:flex-initial"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </PageWrapper>

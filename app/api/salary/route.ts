@@ -16,6 +16,10 @@ export async function GET(request: Request) {
     const month = searchParams.get('month');
     const status = searchParams.get('status');
 
+    const pageParam = searchParams.get('page');
+    const page = pageParam ? parseInt(pageParam, 10) : null;
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+
     const where: Record<string, unknown> = {};
 
     if (session.user.role === 'EMPLOYEE') {
@@ -27,17 +31,49 @@ export async function GET(request: Request) {
     if (month) where.month = month;
     if (status) where.status = status;
 
-    const salaries = await prisma.salary.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { id: true, name: true, avatar: true, designation: true },
-        },
-      },
-    });
+    if (page !== null) {
+      const [salaries, total, aggregations] = await Promise.all([
+        prisma.salary.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+          include: {
+            user: {
+              select: { id: true, name: true, avatar: true, designation: true },
+            },
+          },
+        }),
+        prisma.salary.count({ where }),
+        prisma.salary.groupBy({
+          by: ['status'],
+          where,
+          _sum: {
+            amount: true,
+          },
+          _count: {
+            id: true,
+          },
+        }),
+      ]);
 
-    return NextResponse.json(salaries);
+      const totalPending = aggregations.find(a => a.status === 'PENDING')?._sum.amount ?? 0;
+      const totalPaid = aggregations.find(a => a.status === 'PAID')?._sum.amount ?? 0;
+      const pendingCount = aggregations.find(a => a.status === 'PENDING')?._count.id ?? 0;
+
+      return NextResponse.json({ data: salaries, total, page, limit, totalPending, totalPaid, pendingCount });
+    } else {
+      const salaries = await prisma.salary.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: { id: true, name: true, avatar: true, designation: true },
+          },
+        },
+      });
+      return NextResponse.json(salaries);
+    }
   } catch (error) {
     console.error('[SALARY_GET]', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
