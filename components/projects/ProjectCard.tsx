@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Calendar, Building2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -58,10 +59,11 @@ export default function ProjectCard({
         {/* Cover Image */}
         <div className="relative w-full aspect-video bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/20 dark:to-violet-900/20 overflow-hidden">
           {coverImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={coverImage}
               alt={title}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (

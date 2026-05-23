@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -281,9 +282,11 @@ export default function OnboardingModal() {
                     <label htmlFor="avatar-upload" className="cursor-pointer block">
                       {avatarPreview ? (
                         <div className="relative w-28 h-28 rounded-full overflow-hidden border-2 border-zinc-200 dark:border-zinc-800 shadow-md">
-                          <img
+                          <Image
                             src={avatarPreview}
                             alt="Avatar preview"
+                            fill
+                            sizes="112px"
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

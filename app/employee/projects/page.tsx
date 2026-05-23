@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   FolderKanban,
   Search,
@@ -149,9 +150,11 @@ export default function EmployeeProjectsPage() {
               {/* Cover Gradient/Image */}
               <div className="h-32 bg-gradient-to-r from-emerald-500 to-teal-600 relative p-4 flex flex-col justify-between">
                 {project.coverImage && (
-                  <img
+                  <Image
                     src={project.coverImage}
                     alt={project.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay group-hover:scale-102 transition-transform duration-500"
                   />
                 )}

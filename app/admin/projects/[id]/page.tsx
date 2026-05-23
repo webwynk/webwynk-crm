@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowLeft,
   Loader2,
@@ -252,10 +253,11 @@ export default function AdminProjectDetailPage() {
         {/* Cover backdrop */}
         {project.coverImage && (
           <div className="absolute inset-0 z-0 h-full w-full opacity-10 pointer-events-none">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={project.coverImage}
               alt={project.title}
+              fill
+              sizes="100vw"
               className="w-full h-full object-cover blur-[2px]"
             />
           </div>
