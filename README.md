@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WebWynk CRM
+
+A comprehensive Customer Relationship Management (CRM) application built with modern web technologies, tailored for managing administration, HR, and employee workflows.
+
+## Features
+
+- **Role-Based Access Control (RBAC):** Distinct dashboards and functionalities for Admin, HR, and Employees.
+- **Authentication:** Secure user authentication and session management.
+- **Dashboard & Analytics:** Real-time stats and metrics for administrators.
+- **Activity Tracking:** Logging and tracking system activities.
+- **Project & Task Management:** Project cards, deadline badges, and workflow tracking.
+- **Database:** Relational data management using Prisma ORM.
+
+## Tech Stack
+
+- **Framework:** [Next.js](https://nextjs.org/)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS / CSS Modules
+- **Database ORM:** Prisma
+- **UI Components:** Reusable custom UI components
 
 ## Getting Started
 
-First, run the development server:
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Set up Environment Variables:**
+   Copy `.env.example` to `.env.local` and `.env` and fill in your database and authentication secrets.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Database Setup:**
+   Run the Prisma migrations to set up your database schema.
+   ```bash
+   npx prisma migrate dev
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. **Run the Development Server:**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+- `/app`: Next.js App Router pages and API routes (Admin, HR, Employee).
+- `/components`: Reusable UI components.
+- `/lib` & `/utils`: Helper functions and shared logic.
+- `/prisma`: Prisma schema and database setup.
+- `/store`: State management.
+- `/types`: TypeScript type definitions.
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project can be easily deployed to platforms like [Vercel](https://vercel.com/) or any Node.js hosting environment.

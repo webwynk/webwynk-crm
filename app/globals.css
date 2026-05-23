@@ -1,26 +1,226 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* ShadCN mappings */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* WebWynk Custom Tokens */
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+
+  --color-bg-custom: var(--bg-custom);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border-strong: var(--border-strong);
+  
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  /* Radius overrides per SPEC (rounded-xl card, rounded-lg input/button) */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+
+  /* Font overrides */
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+
+  /* Custom shadows */
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+  /* Keyframes & Animations */
+  --animate-shimmer: shimmer 1.5s infinite;
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  /* ShadCN semantic tokens mapped to light mode colors */
+  --background: #f8f9fc;
+  --foreground: #0f1117;
+  --card: #ffffff;
+  --card-foreground: #0f1117;
+  --popover: #ffffff;
+  --popover-foreground: #0f1117;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f4f9;
+  --secondary-foreground: #0f1117;
+  --muted: #f1f4f9;
+  --muted-foreground: #5a6476;
+  --accent: #f1f4f9;
+  --accent-foreground: #0f1117;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e5e9f0;
+  --input: #e5e9f0;
+  --ring: #818cf8;
+  --radius: 0.75rem;
+
+  /* WebWynk Custom Tokens (Light Mode) */
+  --primary-50:  #eef2ff;
+  --primary-100: #e0e7ff;
+  --primary-200: #c7d2fe;
+  --primary-300: #a5b4fc;
+  --primary-400: #818cf8;
+  --primary-500: #6366f1;
+  --primary-600: #4f46e5;
+  --primary-700: #4338ca;
+  --primary-800: #3730a3;
+  --primary-900: #312e81;
+
+  --bg-custom:       #f8f9fc;
+  --surface:         #ffffff;
+  --surface-2:       #f1f4f9;
+  --border-strong:   #cbd2de;
+  
+  --text-primary:    #0f1117;
+  --text-secondary:  #5a6476;
+  --text-muted:      #9aa3b2;
+
+  --success:         #10b981;
+  --warning:         #f59e0b;
+  --danger:          #ef4444;
+  --info:            #3b82f6;
+
+  /* Sidebar specifically */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #5a6476;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f4f9;
+  --sidebar-accent-foreground: #0f1117;
+  --sidebar-border: #e5e9f0;
+  --sidebar-ring: #818cf8;
+}
+
+.dark {
+  /* ShadCN semantic tokens mapped to dark mode colors */
+  --background: #0c0e14;
+  --foreground: #f0f2f8;
+  --card: #13161f;
+  --card-foreground: #f0f2f8;
+  --popover: #13161f;
+  --popover-foreground: #f0f2f8;
+  --primary: #818cf8;
+  --primary-foreground: #0c0e14;
+  --secondary: #1a1e2a;
+  --secondary-foreground: #f0f2f8;
+  --muted: #1a1e2a;
+  --muted-foreground: #8b93a8;
+  --accent: #1a1e2a;
+  --accent-foreground: #f0f2f8;
+  --destructive: #f87171;
+  --destructive-foreground: #0c0e14;
+  --border: #262b38;
+  --input: #262b38;
+  --ring: #818cf8;
+
+  /* WebWynk Custom Tokens (Dark Mode) */
+  --bg-custom:       #0c0e14;
+  --surface:         #13161f;
+  --surface-2:       #1a1e2a;
+  --border-strong:   #353c4e;
+  
+  --text-primary:    #f0f2f8;
+  --text-secondary:  #8b93a8;
+  --text-muted:      #4e5669;
+
+  /* Sidebar specifically (Dark Mode) */
+  --sidebar: #13161f;
+  --sidebar-foreground: #8b93a8;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #0c0e14;
+  --sidebar-accent: #1a1e2a;
+  --sidebar-accent-foreground: #f0f2f8;
+  --sidebar-border: #262b38;
+  --sidebar-ring: #818cf8;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    letter-spacing: -0.01em;
+  }
+  
+  /* Custom scrollbar rules */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-strong);
+  }
+}
+
+/* Premium Card hover utility */
+.premium-card {
+  @apply bg-card border border-border rounded-xl shadow-card transition-all duration-200;
+}
+.premium-card:hover {
+  @apply shadow-card-hover -translate-y-[1px];
+}
+
+/* Active sidebar item left border indicator */
+.sidebar-item-active {
+  @apply relative;
+}
+.sidebar-item-active::before {
+  content: "";
+  @apply absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary;
 }
