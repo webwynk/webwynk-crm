@@ -2,14 +2,30 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Activity, Loader2, Search } from 'lucide-react';
+import { 
+  Activity, 
+  Loader2, 
+  Search,
+  FolderPlus,
+  Pencil,
+  CheckCircle2,
+  Trash2,
+  UserPlus,
+  Briefcase,
+  Coins,
+  CalendarX,
+  LogIn,
+  LogOut,
+  Settings,
+  Pin
+} from 'lucide-react';
 import PageWrapper from '@/components/shared/PageWrapper';
 import PageHeader from '@/components/shared/PageHeader';
 import RoleBadge from '@/components/shared/RoleBadge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-import { getInitials, timeAgo } from '@/lib/utils';
+import { getInitials, timeAgo, cn } from '@/lib/utils';
 
 interface ActivityLog {
   id: string;
@@ -29,18 +45,81 @@ interface ActivityLog {
   };
 }
 
-const ACTION_LABEL: Record<string, { label: string; icon: string }> = {
-  created_project: { label: 'Created project', icon: '📁' },
-  updated_project: { label: 'Updated project', icon: '✏️' },
-  project_completed: { label: 'Completed project', icon: '✅' },
-  deleted_project: { label: 'Deleted project', icon: '🗑️' },
-  created_employee: { label: 'Added employee', icon: '👤' },
-  created_salary: { label: 'Created salary record', icon: '💼' },
-  salary_paid: { label: 'Paid salary', icon: '💰' },
-  marked_absent: { label: 'Marked absent', icon: '📋' },
-  checked_in: { label: 'Checked in', icon: '🟢' },
-  checked_out: { label: 'Checked out', icon: '🔴' },
-  updated_profile: { label: 'Updated profile', icon: '⚙️' },
+const ACTION_LABEL: Record<
+  string, 
+  { 
+    label: string; 
+    icon: React.ComponentType<{ className?: string }>; 
+    bg: string; 
+    color: string; 
+  }
+> = {
+  created_project: { 
+    label: 'Created project', 
+    icon: FolderPlus, 
+    bg: 'bg-indigo-50 dark:bg-indigo-500/10', 
+    color: 'text-indigo-650 dark:text-indigo-400' 
+  },
+  updated_project: { 
+    label: 'Updated project', 
+    icon: Pencil, 
+    bg: 'bg-amber-50 dark:bg-amber-500/10', 
+    color: 'text-amber-600 dark:text-amber-450' 
+  },
+  project_completed: { 
+    label: 'Completed project', 
+    icon: CheckCircle2, 
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10', 
+    color: 'text-emerald-650 dark:text-emerald-450' 
+  },
+  deleted_project: { 
+    label: 'Deleted project', 
+    icon: Trash2, 
+    bg: 'bg-rose-50 dark:bg-rose-500/10', 
+    color: 'text-rose-600 dark:text-rose-455' 
+  },
+  created_employee: { 
+    label: 'Added employee', 
+    icon: UserPlus, 
+    bg: 'bg-sky-50 dark:bg-sky-500/10', 
+    color: 'text-sky-655 dark:text-sky-400' 
+  },
+  created_salary: { 
+    label: 'Created salary record', 
+    icon: Briefcase, 
+    bg: 'bg-violet-50 dark:bg-violet-500/10', 
+    color: 'text-violet-650 dark:text-violet-400' 
+  },
+  salary_paid: { 
+    label: 'Paid salary', 
+    icon: Coins, 
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10', 
+    color: 'text-emerald-650 dark:text-emerald-450' 
+  },
+  marked_absent: { 
+    label: 'Marked absent', 
+    icon: CalendarX, 
+    bg: 'bg-rose-50 dark:bg-rose-500/10', 
+    color: 'text-rose-600 dark:text-rose-455' 
+  },
+  checked_in: { 
+    label: 'Checked in', 
+    icon: LogIn, 
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10', 
+    color: 'text-emerald-650 dark:text-emerald-450' 
+  },
+  checked_out: { 
+    label: 'Checked out', 
+    icon: LogOut, 
+    bg: 'bg-rose-50 dark:bg-rose-500/10', 
+    color: 'text-rose-600 dark:text-rose-455' 
+  },
+  updated_profile: { 
+    label: 'Updated profile', 
+    icon: Settings, 
+    bg: 'bg-zinc-100 dark:bg-zinc-900/60', 
+    color: 'text-zinc-600 dark:text-zinc-400' 
+  },
 };
 
 export default function AdminActivityPage() {
@@ -111,8 +190,11 @@ export default function AdminActivityPage() {
                   logs.map((log) => {
                     const actionInfo = ACTION_LABEL[log.action] || {
                       label: log.action.replace(/_/g, ' '),
-                      icon: '📌',
+                      icon: Pin,
+                      bg: 'bg-zinc-100 dark:bg-zinc-900/60',
+                      color: 'text-zinc-600 dark:text-zinc-400',
                     };
+                    const ActionIcon = actionInfo.icon;
                     return (
                       <tr key={log.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/20 transition-colors">
                         <td className="px-4 py-3">
@@ -129,8 +211,10 @@ export default function AdminActivityPage() {
                           <RoleBadge role={log.actorRole} />
                         </td>
                         <td className="px-4 py-3">
-                          <span className="flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
-                            <span className="text-base">{actionInfo.icon}</span>
+                          <span className="flex items-center gap-2.5 text-xs text-zinc-700 dark:text-zinc-300">
+                            <span className={cn("p-1.5 rounded-lg shrink-0 flex items-center justify-center", actionInfo.bg, actionInfo.color)}>
+                              <ActionIcon className="w-3.5 h-3.5" />
+                            </span>
                             <span>{actionInfo.label}</span>
                           </span>
                         </td>

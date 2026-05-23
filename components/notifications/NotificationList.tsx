@@ -2,7 +2,18 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Bell, CheckCheck, Loader2 } from 'lucide-react';
+import { 
+  Bell, 
+  CheckCheck, 
+  Loader2,
+  FolderPlus,
+  CheckCircle2,
+  RefreshCw,
+  Coins,
+  Clock,
+  LogIn,
+  LogOut
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import PageWrapper from '@/components/shared/PageWrapper';
 import PageHeader from '@/components/shared/PageHeader';
@@ -19,14 +30,49 @@ interface Notification {
   createdAt: string;
 }
 
-const TYPE_ICON: Record<string, string> = {
-  PROJECT_ASSIGNED: '📁',
-  PROJECT_COMPLETED: '✅',
-  PROJECT_STATUS_CHANGED: '🔄',
-  SALARY_PAID: '💰',
-  DEADLINE_ALERT: '⏰',
-  ATTENDANCE_CHECKIN: '🟢',
-  ATTENDANCE_CHECKOUT: '🔴',
+const TYPE_ICON: Record<
+  string, 
+  { 
+    icon: React.ComponentType<{ className?: string }>; 
+    bg: string; 
+    color: string; 
+  }
+> = {
+  PROJECT_ASSIGNED: { 
+    icon: FolderPlus, 
+    bg: 'bg-indigo-50 dark:bg-indigo-500/10', 
+    color: 'text-indigo-650 dark:text-indigo-400' 
+  },
+  PROJECT_COMPLETED: { 
+    icon: CheckCircle2, 
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10', 
+    color: 'text-emerald-650 dark:text-emerald-450' 
+  },
+  PROJECT_STATUS_CHANGED: { 
+    icon: RefreshCw, 
+    bg: 'bg-amber-50 dark:bg-amber-500/10', 
+    color: 'text-amber-600 dark:text-amber-455' 
+  },
+  SALARY_PAID: { 
+    icon: Coins, 
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10', 
+    color: 'text-emerald-650 dark:text-emerald-450' 
+  },
+  DEADLINE_ALERT: { 
+    icon: Clock, 
+    bg: 'bg-rose-50 dark:bg-rose-500/10', 
+    color: 'text-rose-600 dark:text-rose-455' 
+  },
+  ATTENDANCE_CHECKIN: { 
+    icon: LogIn, 
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10', 
+    color: 'text-emerald-650 dark:text-emerald-450' 
+  },
+  ATTENDANCE_CHECKOUT: { 
+    icon: LogOut, 
+    bg: 'bg-rose-50 dark:bg-rose-500/10', 
+    color: 'text-rose-600 dark:text-rose-455' 
+  },
 };
 
 interface NotificationListProps {
@@ -112,32 +158,40 @@ export default function NotificationList({ accent }: NotificationListProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {notifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={cn(
-                'flex items-start gap-3 px-4 py-3.5 rounded-xl border transition-colors cursor-pointer',
-                notification.isRead
-                  ? 'bg-card border-border'
-                  : isEmerald
-                    ? 'bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/20 border-l-4 border-l-emerald-500'
-                    : isSky
-                      ? 'bg-sky-50/50 dark:bg-sky-500/5 border-sky-200 dark:border-sky-500/20 border-l-4 border-l-sky-500'
-                      : 'bg-indigo-50/50 dark:bg-indigo-500/5 border-indigo-200 dark:border-indigo-500/20 border-l-4 border-l-indigo-500'
-              )}
-              onClick={async () => {
-                if (!notification.isRead) {
-                  await handleMarkOne(notification.id);
-                }
-                if (notification.link) {
-                  router.push(notification.link);
-                }
-              }}
-            >
-              {/* Icon */}
-              <span className="text-xl mt-0.5 shrink-0">
-                {TYPE_ICON[notification.type] || '🔔'}
-              </span>
+          {notifications.map((notification) => {
+            const iconConfig = TYPE_ICON[notification.type] || {
+              icon: Bell,
+              bg: 'bg-zinc-100 dark:bg-zinc-900/60',
+              color: 'text-zinc-500 dark:text-zinc-400',
+            };
+            const NotificationIcon = iconConfig.icon;
+            
+            return (
+              <div
+                key={notification.id}
+                className={cn(
+                  'flex items-start gap-3 px-4 py-3.5 rounded-xl border transition-colors cursor-pointer',
+                  notification.isRead
+                    ? 'bg-card border-border'
+                    : isEmerald
+                      ? 'bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/20 border-l-4 border-l-emerald-500'
+                      : isSky
+                        ? 'bg-sky-50/50 dark:bg-sky-500/5 border-sky-200 dark:border-sky-500/20 border-l-4 border-l-sky-500'
+                        : 'bg-indigo-50/50 dark:bg-indigo-500/5 border-indigo-200 dark:border-indigo-500/20 border-l-4 border-l-indigo-500'
+                )}
+                onClick={async () => {
+                  if (!notification.isRead) {
+                    await handleMarkOne(notification.id);
+                  }
+                  if (notification.link) {
+                    router.push(notification.link);
+                  }
+                }}
+              >
+                {/* Icon */}
+                <div className={cn("p-2 rounded-xl shrink-0 flex items-center justify-center mt-0.5", iconConfig.bg, iconConfig.color)}>
+                  <NotificationIcon className="w-4 h-4" />
+                </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
@@ -163,8 +217,9 @@ export default function NotificationList({ accent }: NotificationListProps) {
                 )} />
               )}
             </div>
-          ))}
-        </div>
+          );
+        })}
+      </div>
       )}
     </PageWrapper>
   );
